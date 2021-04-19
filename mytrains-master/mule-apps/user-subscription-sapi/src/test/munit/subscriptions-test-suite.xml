@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="subscriptions-test-suite.xml" />
+	<munit:test name="subscriptions-test-suite-addSubscriptionByUserIdTest" doc:id="d7db56e1-4b34-41f9-8ee9-0331078e2547" description="Test">
+		<munit:behavior>
+			<munit:set-event doc:name="Set Input" doc:id="b5614db7-134e-4fb8-beb1-358366758710" >
+				<munit:payload value="#[output application/json --- readUrl('classpath://addSubscriptionByUserIdtest\set-event_payload-error.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:attributes value="#[readUrl('classpath://addSubscriptionByUserIdtest\set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://addSubscriptionByUserIdtest\set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to addSubscriptionByUserId" doc:id="ddefa6d9-78fb-44c6-8f82-be317225b710" name="add-subscription-by-user-id"/>
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="8f0ce3b2-f7a8-427d-b321-4b51c8e2ebf2" actual="#[payload]" expected='#[{
+  statusCode: "400",
+  message: "Source and destination location cannot be same"
+ }]' message="Failure while trying to execute error scenario"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="subscriptions-test-suite-getSubscriptionBySubscriptionIdTest" doc:id="ddbcce97-0ad4-422b-bdf0-ea614a6b6d06" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="b6c8fe55-3a56-4c09-85af-1a2ee09a088f" processor="flow">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="getSubscriptionBySubscriptionId" attributeName="name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/json --- readUrl('classpath://getuserslocationsusersubscriptionsystemapiconfigtest\mock_payload.dwl')]" mediaType="application/java" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to getSubscriptionBySubscriptionId" doc:id="6a27075b-a6f1-4689-a799-2fbb463fc514" name="get-subscription-by-subscription-id"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="2b7deba1-0730-427b-b24c-c6e78a3a5dbd" actual="#[payload]" expected='#[{
+  statusCode: "404",
+  message: "Subscription not available for the subscription id"
+ }]' message="Failure while trying to execute error scenario" />
+		</munit:validation>
+	</munit:test>
+	<munit:test name="subscriptions-test-suite-getSubscriptionsByUserIdTest" doc:id="fd4fe2b8-6be9-4d30-a3f4-9218c8c2b681" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="762f2afd-dc67-4c54-a922-2c6ac3815647" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Select" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="d9ca828a-819d-4ccc-be5c-792e0057887b" attributeName="doc:id" />
+					<munit-tools:with-attribute whereValue="Database_Config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://getSubscriptionsByUserIdtest\empty-payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="248ebc66-d328-4a14-afb3-bde87514133e">
+				<munit:payload value="#[readUrl('classpath://getSubscriptionsByUserIdtest\set-event_payload1.dwl')]" encoding="UTF-8" />
+				<munit:attributes value="#[readUrl('classpath://getSubscriptionsByUserIdtest\set-event_attributes1.dwl')]" />
+				<munit:variables>
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://getSubscriptionsByUserIdtest\set-event_variable_1.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to getSubscriptionsByUserId" doc:id="bd343bf6-910a-498b-b8ac-222704565922" name="get-subscriptions-by-user-id"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="b35e5ccb-1054-4032-99dc-350baef7b72b" actual="#[payload]" expected='#[{
+  statusCode: "204",
+  message: "No subscriptions are available for the user"
+ }]' message="Failure while trying to execute error scenario" />
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

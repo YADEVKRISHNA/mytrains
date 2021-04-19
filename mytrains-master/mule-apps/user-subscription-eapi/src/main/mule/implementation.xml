@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule
+  xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+  xmlns:user-identity-mgmt-system-api="http://www.mulesoft.org/schema/mule/user-identity-mgmt-system-api"
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+  xmlns:user-subscription-system-api="http://www.mulesoft.org/schema/mule/user-subscription-system-api"
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+  xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+  xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+
+  xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/user-subscription-system-api http://www.mulesoft.org/schema/mule/user-subscription-system-api/current/mule-user-subscription-system-api.xsd
+http://www.mulesoft.org/schema/mule/user-identity-mgmt-system-api http://www.mulesoft.org/schema/mule/user-identity-mgmt-system-api/current/mule-user-identity-mgmt-system-api.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="delete-user-by-userid">
+		<json-logger:logger doc:name="JSON Logger Deactivate User By User Id Entry" doc:id="7167f6db-8f4b-4671-b9ed-674217ac92cd" config-ref="jsonLoggerConfig" tracePoint="BEFORE_REQUEST" category="delete-user-by-userid" message='JSON Logger Delete User By User Id Entry'/>
+		<user-identity-mgmt-system-api:delete-user-by-user-id doc:name="Deactivate User By User Id" doc:id="b4c6b0e0-a453-4bf4-8016-13e996752549" config-ref="userIdentityMgmntSapiConfig" user-id="#[attributes.uriParams.'userId']" x-api-client-key="${identity-management.apiClientKey}" x-api-client-secret="${identity-management.apiClientSecret}"/>
+    <json-logger:logger doc:name="JSON Logger Deactivate User By User Id Exit" doc:id="e18a41ef-7951-4831-8753-70fedefc6487" config-ref="jsonLoggerConfig" tracePoint="AFTER_REQUEST" category="delete-user-by-userid" message='JSON Logger Delete User By User Id Exit'/>
+  </flow>
+  <flow name="update-user-password">
+		<json-logger:logger doc:name="JSON Logger Update User Password Entry" doc:id="df6ac1fa-35b3-44dd-9652-5a594cb674d6" config-ref="jsonLoggerConfig" message='JSON Logger Update User Password Entry' tracePoint="BEFORE_REQUEST" category="update-user-password" />
+		<user-identity-mgmt-system-api:update-user-by-user-id doc:name="Update User Password" doc:id="a23d8c5f-153f-4f92-a979-cf6fa8fc284b" config-ref="userIdentityMgmntSapiConfig" x-api-client-key="${identity-management.apiClientKey}" x-api-client-secret="${identity-management.apiClientSecret}" user-id="#[message.attributes.headers.'userId']">
+			<user-identity-mgmt-system-api:update-user-by-user-id-request-data ><![CDATA[#[{
+	"email": payload.email,
+	"password": payload.password,
+	"newPassword": payload.newPassword
+}]]]></user-identity-mgmt-system-api:update-user-by-user-id-request-data>
+		</user-identity-mgmt-system-api:update-user-by-user-id>
+    <json-logger:logger doc:name="JSON Logger Update User Password Exit" doc:id="ef2e5a1e-22f7-4cc2-b239-3650646ae54b" config-ref="jsonLoggerConfig" message='JSON Logger Update User Password Exit' tracePoint="AFTER_REQUEST" category="update-user-password" />
+  </flow>
+  <flow name="get-alerts-by-userid-subscription-id">
+    <json-logger:logger doc:name="JSON Logger Get Alerts By User Id Entry" doc:id="77a92734-6ba7-4ac1-8164-82c8ac9cede3" config-ref="jsonLoggerConfig" message='JSON Logger Get Alerts By User Id Entry' tracePoint="BEFORE_REQUEST" category="get-alerts-by-userid-subscription-id" priority="WARN"/>
+		<user-subscription-system-api:get-alerts-by-user-id-subscription-id
+      doc:name="Get Alerts By User Id By Subscription Id" doc:id="6d89f91d-c763-4ad0-b5fc-633eb2d921b3" config-ref="userSubscriptionSapiConfig"
+      user-id="#[attributes.uriParams.'userId']" subscription-id="#[attributes.uriParams.'subscriptionId']" />
+    <json-logger:logger doc:name="JSON Logger Get Alerts By User Id Exit" doc:id="a96c2212-1dff-4396-8f15-38ceb8deb712" config-ref="jsonLoggerConfig" message='JSON Logger Get Alerts By User Id Exit' tracePoint="AFTER_REQUEST" category="get-alerts-by-userid-subscription-id" priority="WARN" />
+  </flow>
+  <flow name="get-subscriptions-by-userid">
+    <json-logger:logger doc:name="JSON Logger Get Subscriptions By User Id Entry" doc:id="27df627c-b44d-4331-af07-5b59b5234001" config-ref="jsonLoggerConfig" message='JSON Logger Get Subscriptions By User Id Entry' tracePoint="BEFORE_REQUEST" category="get-subscripitions-by-user-id" />
+		<user-subscription-system-api:get-subscriptions-by-user-id doc:name="Get Subscriptions By User Id"
+      doc:id="88f61d08-4c83-4327-93d9-c8c88b44268e" config-ref="userSubscriptionSapiConfig" user-id="#[attributes.uriParams.'userId']" />
+    <json-logger:logger doc:name="JSON Logger Get Subscriptions By User Id Exit" doc:id="4af7d323-25e0-44ae-9d54-2ec8a4aa8840" config-ref="jsonLoggerConfig" message='JSON Logger Get Subscriptions By User Id Exit' tracePoint="AFTER_REQUEST" category="get-subscripitions-by-user-id" />
+  </flow>
+  <flow name="get-users">
+    <json-logger:logger doc:name="JSON Logger Get Users Entry" doc:id="6ea16da8-ef3f-4059-bccc-764378a2da7d" config-ref="jsonLoggerConfig" message='JSON Logger Get Users Entry' tracePoint="BEFORE_REQUEST" category="get-users" />
+		<user-subscription-system-api:get-users doc:name="Get All Users" doc:id="934a61f4-8b1b-490e-808e-60d0aa8d51ba"
+      config-ref="userSubscriptionSapiConfig" />
+    <json-logger:logger doc:name="JSON Logger Get Users Entry" doc:id="34ecfe17-8edb-48e6-8e0a-aee36f08b597" config-ref="jsonLoggerConfig" message='JSON Logger Get Users Entry' tracePoint="AFTER_REQUEST" category="get-users" />
+  </flow>
+  <flow name="get-subscription-by-userid-subscriptionid">
+    <json-logger:logger doc:name="JSON Logger Get Subscriptions By User Id Entry" doc:id="3094f310-eeb9-4f86-b134-d6edcfea28b9" config-ref="jsonLoggerConfig" message='JSON Logger Get Subscriptions By User Id Entry' tracePoint="BEFORE_REQUEST" category="get-subscription-by-userid-subscriptionid" />
+		<user-subscription-system-api:get-subscription-by-user-id-subscription-id
+      doc:name="Get SBubscription By User Id Subscription Id" doc:id="2f452619-8bc0-4ff7-b356-2096ac0f2fb8" config-ref="userSubscriptionSapiConfig"
+      user-id="#[attributes.uriParams.'userId']" subscription-id="#[attributes.uriParams.'subscriptionId']" />
+    <json-logger:logger doc:name="JSON Logger Get Subscriptions By User Id Exit" doc:id="c6f1d079-f1d5-4690-91d3-55a34092112e" config-ref="jsonLoggerConfig" message='JSON Logger Get Subscriptions By User Id Exit' tracePoint="AFTER_REQUEST" category="get-subscription-by-userid-subscriptionid" />
+  </flow>
+  <flow name="get-user-by-userid">
+    <json-logger:logger doc:name="JSON Logger Users By User Id Entry" doc:id="c1fe6f49-5dab-4a85-b0ae-304269c2f5a1" config-ref="jsonLoggerConfig" message='JSON Logger Users By User Id Entry' tracePoint="BEFORE_REQUEST" category="delete-user-by-userid" />
+		<user-subscription-system-api:get-user-by-user-id doc:name="Get User By User Id" doc:id="6c7053b9-da9c-44c5-90d6-b7d203cf3be3"
+      config-ref="userSubscriptionSapiConfig" user-id="#[attributes.uriParams.userId]" />
+    <json-logger:logger doc:name="JSON Logger Users By User Id Exit" doc:id="a5f56156-fbf8-4bc5-a27b-6bd43b50d97d" config-ref="jsonLoggerConfig" message='JSON Logger Users By User Id Exit' tracePoint="AFTER_REQUEST" category="delete-user-by-userid" />
+  </flow>
+  <flow name="create-subscription-by-userid">
+    <json-logger:logger doc:name="JSON Logger Create Subscription By User Id Entry" doc:id="bc33e404-30ab-4744-a45a-1e8f4f1b15b5" config-ref="jsonLoggerConfig" message='JSON Logger Create Subscription By User Id Exit' tracePoint="BEFORE_REQUEST" category="create-subscrption-by-userid" />
+		<user-subscription-system-api:create-subscription-by-user-id doc:name="Create Subscription By User Id"
+      doc:id="0e1b47de-7e45-4bfb-9b20-9937ea2d3eb9" config-ref="userSubscriptionSapiConfig" user-id="#[attributes.uriParams.'userId']">
+      <user-subscription-system-api:create-subscription-by-user-id-request-data><![CDATA[#[{	"userId" : payload.userId as String,
+    "sourceLocationCode": payload.sourceLocationCode,
+    "destinationLocationCode": payload.destinationLocationCode,
+    "fromTime": payload.fromTime,
+    "toTime": payload.toTime,
+    "advanceNotificationMins": payload.advanceNotificationMins
+ }]]]></user-subscription-system-api:create-subscription-by-user-id-request-data>
+    </user-subscription-system-api:create-subscription-by-user-id>
+    <json-logger:logger doc:name="JSON Logger Create Subscription By User Id Exit" doc:id="c5907943-e277-4da5-a698-831aa0854f71" config-ref="jsonLoggerConfig" message='JSON Logger Create Subscription By User Id Exit' tracePoint="AFTER_REQUEST" category="create-subscrption-by-userid" />
+  </flow>
+  <flow name="create-user-in-identity-manager">
+    <!-- <user-identity-mgmt-system-api:create-create-user doc:name="Create User in OKTA" doc:id="0913fc99-70f5-4919-9c57-34a47c91aacf" config-ref="User_Identity_Mgmt_System_API_Config" 
+      x-api-client-key="${identity-management.apiClientKey}" x-api-client-secret="${identity-management.apiClientSecret}" okta-client-key="${identity-management.oktaClientKey}" okta-client-secret="${identity-management.oktaClientSecret}" 
+      target="identity" > -->
+
+    <json-logger:logger doc:name="JSON Logger Create User In Identity Manager Entry" doc:id="8085a7af-d118-4a7f-95cc-e7213269f6b6" config-ref="jsonLoggerConfig" message="JSON Logger Create User In Identity Manager Entry" tracePoint="BEFORE_REQUEST" category="create-user-in-identity-manager" />
+		<user-identity-mgmt-system-api:create-user doc:name="Create User In Okta" doc:id="223b0853-9a3d-4969-8c3b-b3cda3566d53" config-ref="userIdentityMgmntSapiConfig" x-api-client-key="${identity-management.apiClientKey}" x-api-client-secret="${identity-management.apiClientSecret}" target="identity">
+			<user-identity-mgmt-system-api:create-user-request-data><![CDATA[#[{
+  "firstName": payload.firstName,
+  "lastName": payload.secondName,
+  "email": payload.email,
+  "phone": payload.mobilePhone,
+  "userId": payload.userId
+}]]]></user-identity-mgmt-system-api:create-user-request-data>
+		</user-identity-mgmt-system-api:create-user>
+		<user-subscription-system-api:create-user doc:name="Create User In Database" doc:id="b91cd9d1-2b41-4e28-9dd8-f671ad8bb7a6" config-ref="userSubscriptionSapiConfig">
+      <user-subscription-system-api:create-user-request-data><![CDATA[#[{
+  "firstName": payload.firstName,
+  "secondName": payload.secondName,
+  "email": payload.email,
+  "phone": payload.phone,
+  "userId": vars.identity.userId
+}]]]></user-subscription-system-api:create-user-request-data>
+    </user-subscription-system-api:create-user>
+    <json-logger:logger doc:name="JSON Logger Create User In Identity Manager Exit" doc:id="3cd3d3b9-bad7-4766-9be8-f0ac94215cb8" config-ref="jsonLoggerConfig" message="JSON Logger Create User In Identity Manager Exit" tracePoint="AFTER_REQUEST" category="create-user-in-identity-manager" />
+  </flow>
+	<flow name="authenticate-user-in-identity-manager" doc:id="f6a9dadb-d24b-4bf5-803a-0ec685e0e2ea">
+		<json-logger:logger doc:name="JSON Logger Authenticate User In Identity Manager Entry" doc:id="59fa4418-65d7-4cfa-8a55-e2ecc0f62ebb" config-ref="jsonLoggerConfig" message="JSON Logger Authenticate User In Identity Manager Entry" />
+		<user-identity-mgmt-system-api:create-authenticate doc:name="Authenticate User In Okta" doc:id="7622d4c5-7830-49ee-85ee-d3778fecf20e" config-ref="userIdentityMgmntSapiConfig" x-api-client-key="${identity-management.apiClientKey}" x-api-client-secret="${identity-management.apiClientSecret}" okta-client-key="${identity-management.oktaClientKey}" okta-client-secret="${identity-management.oktaClientSecret}" >
+			<user-identity-mgmt-system-api:create-authenticate-request-data ><![CDATA[#[{
+  "email": payload.email,
+  "password": payload.password
+}]]]></user-identity-mgmt-system-api:create-authenticate-request-data>
+		</user-identity-mgmt-system-api:create-authenticate>
+		<json-logger:logger doc:name="JSON Logger Authenticate User In Identity Manager Exit" doc:id="a5fe9d48-2459-4ef6-8687-ab88da9bb529" config-ref="jsonLoggerConfig" message="JSON Logger Authenticate User In Identity Manager Exit" />
+	</flow>
+	<flow name="get-locations" doc:id="99edbebd-99e4-4455-a34c-ae032a538811" >
+		<json-logger:logger doc:name="JSON Logger Get Qualified Locations Entry" doc:id="448b91c7-f013-4df3-a497-700b6e86ae3c" config-ref="jsonLoggerConfig" message="JSON Logger Get Qualified Locations Entry"/>
+		<user-subscription-system-api:get-locations doc:name="Get Qualified Locations" doc:id="192b69ab-75db-4839-be40-0612e49e603e" config-ref="userSubscriptionSapiConfig" notification-range-mins="${user-subscription.advanceNotificationMins}"/>
+		<json-logger:logger doc:name="JSON Logger Get Qualified Locations Exit" doc:id="f195ecf4-ff87-43a6-8fee-b2d27e93082d" config-ref="jsonLoggerConfig" tracePoint="END" message="JSON Logger Get Qualified Locations Exit"/>
+	</flow>
+	<flow name="create-alert-by-userid-by-subscriptionid" doc:id="f8192947-e028-44ee-b34d-623db1e2b4aa" >
+		<json-logger:logger doc:name="JSON Logger Create Alert By User Id By Subscription Id Entry" doc:id="12ed2729-ba0e-44e7-95c7-c1cecb0f11a1" config-ref="jsonLoggerConfig" message="JSON Logger Create Alert By User Id By Subscription Id Entry"/>
+		<user-subscription-system-api:create-alert-by-user-id-subscription-id doc:name="Create Alert By User Id By Subscription Id" doc:id="d8022745-2072-46f5-8bde-58516880f1e3" config-ref="userSubscriptionSapiConfig" user-id="#[attributes.uriParams.'userId']" subscription-id="#[attributes.uriParams.'subscriptionId']">
+			<user-subscription-system-api:create-alert-by-user-id-subscription-id-request-data ><![CDATA[#[{
+ subscription_id : attributes.uriParams.'subscriptionId' as Number,
+ delay_type_flag : payload.delayType,
+ delay_time : payload.delayMins ,
+}]]]></user-subscription-system-api:create-alert-by-user-id-subscription-id-request-data>
+		</user-subscription-system-api:create-alert-by-user-id-subscription-id>
+		<json-logger:logger doc:name="JSON Logger Create Alert By User Id By Subscription Id Exit" doc:id="d1758fb0-5c62-47f8-bdfc-25e735b37317" config-ref="jsonLoggerConfig" message="JSON Logger Create Alert By User Id By Subscription Id Exit"/>
+	</flow>
+</mule>

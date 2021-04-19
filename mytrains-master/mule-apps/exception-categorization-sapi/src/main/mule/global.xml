@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" 
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+    <http:listener-config name="httpListenerConfig" doc:name="HTTP Listener config" doc:id="796b2d21-73a9-44c7-a21c-d3e352d04f8a" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<configuration doc:name="Configuration" doc:id="2c284d6b-d6c0-4783-889b-1fa072493c25" defaultErrorHandler-ref="globalError_Handler" />
+	<json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="30106ba5-1424-400e-9719-f0106dff29ab" applicationName="exception-categorization-sapi" applicationVersion="1.0.0-SNAPSHOT" environment="${muleEnv}" />
+	<global-property doc:name="Global Property" doc:id="1c96dba8-e9c7-4aa6-bfba-ee5934950993" name="muleEnv" value="dev" />
+	<configuration-properties doc:name="Configuration properties" doc:id="94006a40-52fe-442e-91d7-46d46eef2826" file="config\exception.categorization.${muleEnv}.yaml" />
+	<error-handler name="globalError_Handler" doc:id="7e72cb21-e050-424e-a778-80dbe088c470" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="49479ced-fb55-4e8d-9396-c5fa4052bfe0" type="APP:ERRORS">
+			<flow-ref doc:name="Error Handling Flow" doc:id="9bfc9fc2-97fa-4083-ae86-03f81b429a4c" name="error-handling-flow" />
+		</on-error-continue>
+	</error-handler>
+	
+	<flow name="error-handling-flow" doc:id="72e51cfe-da69-4e91-901f-d97ea41c8ca0" >
+	<json-logger:logger doc:name="JSON Logger Error Entry" doc:id="ee583abf-0137-4629-8506-2cc51e01b57a" config-ref="jsonLoggerConfig" message="JSON Logger Error Entry"/>
+		<ee:transform doc:name="Load DVM Transform Message" doc:id="9415c01e-59c0-4e21-9df1-71df23a05d0c">
+ <ee:message>
+ </ee:message>
+ <ee:variables>
+   <ee:set-variable resource="dwl/dvm-errorcode-typelist-map.dwl" variableName="DVM" />
+ </ee:variables>
+</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Before DVM Conversion" doc:id="60a49220-dfe2-431e-9366-fe4cbdae6fc5" config-ref="jsonLoggerConfig" message='#[(message.payload.errorType.namespace as String ++ ":" ++ message.payload.errorType.identifier as String)]'/>
+		<ee:transform doc:name="DVM Type List Conversion Transform Message" doc:id="25947247-d3da-442a-8108-15629d50ab6b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+//DVM type list conversion method
+fun lookupValue(dvm, dvmType, sourceValue)= XmlModule::xpath("/dvms/dvm[@mapper='$(dvmType)']/rows/row[cell[1]='$(sourceValue)']/cell[2]/text()", dvm.^raw, {})[0]
+
+var errorType= (message.payload.errorType.namespace as String ++ ":" ++ message.payload.errorType.identifier as String)
+var errorCode= (if(!isEmpty(message.payload.errorMessage))
+						message.payload.errorMessage.attributes.statusCode
+					 else
+					 	lookupValue(vars.DVM, "ErrorType", errorType))  as Number
+
+fun classifyErrorType(statusCode)=
+	if((statusCode >= 100) and (statusCode < 200))
+		"Informational"
+	else if((statusCode >= 200) and (statusCode < 300))
+		"Success"
+	else if((statusCode >=300) and (statusCode < 400))
+		"Redirection"	
+	else if([400,401] contains statusCode)
+		"Data Validation Error"
+	else if((statusCode >= 402) and (statusCode < 500))
+		"Client-Side Technical Error"
+	else if((statusCode >= 500) and (statusCode < 600))
+		"Server-Side Technical Error"
+	else if(!isEmpty(errorType) and (errorType == "MULE:EXPRESSION"))
+		"Mule Expression Error"
+	else
+		"Invalid Error Code"
+
+---
+
+{
+	"errorDetails":
+	{
+		"errorCode": errorCode,
+		"errorCategory": classifyErrorType(errorCode),
+		("errorReasonPhrase": message.payload.errorMessage.attributes.reasonPhrase as String) if(!isEmpty(message.payload.errorMessage)),
+		"errorType": errorType,
+		("errorSummary": message.payload.errorMessage.payload.errorSummary)
+		if(!isEmpty(message.payload.errorMessage.payload.errorSummary)),
+							
+		"errorMessage": if(!isEmpty(message.payload.errorMessage.payload.errorCauses)) 
+							message.payload.errorMessage.payload.errorCauses.*errorSummary
+						else
+							message.payload.detailedDescription
+		
+	}	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Error Exit" doc:id="9de4abe8-8cff-419d-8df1-6c8f538fb24c" config-ref="jsonLoggerConfig" message="JSON Logger Error Exit" tracePoint="END"/>
+	</flow>
+</mule>
+	
+	

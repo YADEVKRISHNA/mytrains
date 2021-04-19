@@ -1,0 +1,13 @@
+{
+  "sampleData": {
+    "1652da1d-d3ec-411f-b5d9-87fd3f278e66": {
+      "vars-arrivals": "sample_data/unknown.dwl"
+    },
+    "123c95b6-5946-4b08-a630-95513b1219fc": {
+      "payload": "sample_data/list_json.json"
+    },
+    "add74422-a2c3-442c-b300-fe1412d197d0": {
+      "payload": "sample_data/unknown_1.dwl"
+    }
+  }
+}

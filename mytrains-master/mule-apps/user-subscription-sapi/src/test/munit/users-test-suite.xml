@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="users-test-suite.xml" />
+	<munit:test name="users-test-suite-getUserByUserIdTest" doc:id="2315b869-239e-487f-86a2-78c74104d566" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="69601ba7-221d-4e4d-a030-2c2669ce8665" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="36ca2261-9143-4fc5-bdc7-2efb97b015ff" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://getUserByUserIdtest\empty-payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+				</munit-tools:then-return>
+	
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="60b744ac-72ee-4680-821c-99fad31412e8" >
+				<munit:payload value="#[readUrl('classpath://getUserByUserIdtest\set-event_payload.dwl')]" encoding="UTF-8" />
+				<munit:attributes value="#[readUrl('classpath://getUserByUserIdtest\set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://getUserByUserIdtest\set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to getUserByUserId" doc:id="8f5af99c-3e0c-482d-b1ec-5355556f6400" name="get-user-by-user-id"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="21680d1a-3511-410c-9b50-dc5875b80422" actual="#[payload]" expected='#[{
+  statusCode: "404",
+  message: "User not available in database for the supplied user id"
+}]' message="Failure while trying to execute error scenario" />
+		</munit:validation>
+	</munit:test>
+	<munit:test name="users-test-suite-getAllUserDetailsTest" doc:id="10a6c696-4e97-4e24-abc4-a238942cb066" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="56a8de61-8e4d-4846-830b-8df18e08ff5d" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="b69b26ba-9f55-4445-86be-9230bdbc1005" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://getAllUserDetailstest\empty-payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="abbfc6ce-d310-4a4d-8a74-15b83708ea9a" >
+				<munit:payload value="#[readUrl('classpath://getUserByUserIdtest\set-event_payload.dwl')]" encoding="UTF-8" />
+				<munit:attributes value="#[readUrl('classpath://getUserByUserIdtest\set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://getUserByUserIdtest\set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to getAllUserDetails" doc:id="3fa9da04-320e-49db-a0f4-744ced2fb0ac" name="get-all-user-details"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="cafd5175-334f-4b01-8423-7b44f2cf6fcd" actual="#[payload]" expected='#[{
+  statusCode: "404",
+  message: "No users are available in database"
+}]' message="Failure while trying to execute error scenario" />
+		</munit:validation>
+	</munit:test>
+	<munit:test name="users-test-suite-getAllUserDetailsTest-query-params" doc:id="1c0de585-95a7-437c-8840-5ddf121a0f71" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="6674b9c2-9a71-40ea-bf58-4e20d7ca7b06" processor="db:select" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="cdad1191-4601-45bf-8a57-20623b15b2e6" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://getAllUserDetailstest\empty-payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="4617c8dd-054f-46fb-9c0a-6467a46a761a" >
+				<munit:payload value="#[readUrl('classpath://getAllUserDetailsQueryParamstest\set-event_payload.dwl')]" encoding="UTF-8" />
+				<munit:attributes value="#[readUrl('classpath://getAllUserDetailsQueryParamstest\set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://getAllUserDetailsQueryParamstest\set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to getAllUserDetails" doc:id="cdf8c93b-2964-413f-b152-ab32316f00eb" name="get-all-user-details"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-equals doc:name="Assert equals" doc:id="4669e32a-6deb-4aac-b8d9-23ae371fb649" actual="#[payload]" expected='#[{
+  statusCode: "404",
+  message: "No users have subscribed to the train time provided"
+ }]' message="Failure while trying to execute error scenario" />
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

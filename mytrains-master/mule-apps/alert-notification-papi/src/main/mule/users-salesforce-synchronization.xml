@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:user-subscription-system-api="http://www.mulesoft.org/schema/mule/user-subscription-system-api" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/user-subscription-system-api http://www.mulesoft.org/schema/mule/user-subscription-system-api/current/mule-user-subscription-system-api.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+	<flow name="users-salesforce-synchronizationFlow" doc:id="f2a5327d-8e6c-4305-b199-24675b48efb1" >
+		<scheduler doc:name="Scheduler" doc:id="fb5cc00c-6af2-41ad-a0ac-792b1b4a54fb" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<json-logger:logger doc:name="JSON Logger Salesforce Synchronization Entry" doc:id="0d10ee70-c5e0-45ca-901c-b5a687191571" config-ref="jsonLoggerConfig" message="JSON Logger Salesforce Synchronization Entry"/>
+		<java:invoke-static method="getYesterdaysDate()" doc:name="Invoke Get Yesterday Date Method" doc:id="c759618b-fbd6-49e5-ac54-9cfd170cdd16" class="com.utils.DateUtils" target="yesterday"/>
+		<user-subscription-system-api:get-users doc:name="Retrieve All Users That Were Created The Day Before The Scheduler Is Run" doc:id="4d2365b6-14e1-41f0-8b9e-70dd2502952a" config-ref="userSubscriptionSystemApiConfig" creation-date="#[vars.yesterday]"/>
+		<ee:transform doc:name="Salesforce Transformation" doc:id="995fc55f-f7f5-4e07-af27-bd847574837d" >
+			<ee:message >
+				<ee:set-payload resource="dwl\salesforce-transformation.dwl" />
+			</ee:message>
+		</ee:transform>
+		<salesforce:create doc:name="Create Records in Salesforce Account" doc:id="79a8de62-a960-4e57-84cc-d625434a1145" config-ref="alertNotificationPapiSalesforceConfig" type="Contact"/>
+		<json-logger:logger doc:name="JSON Logger Salesforce Synchronization Exit" doc:id="75140256-d1f4-48f5-bd00-dfaf1646aeec" config-ref="jsonLoggerConfig" message="JSON Logger Salesforce Synchronization Exit"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5c609f8a-707d-42db-85f4-d89a5218e8b1" type="JAVA:ARGUMENTS_MISMATCH, JAVA:CLASS_NOT_FOUND, JAVA:INVOCATION, JAVA:NO_SUCH_METHOD">
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="0f63ac85-3362-4ff5-bc69-6b89b7784d13" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while synchronizing user data with salesforce" >
+					<email:to-addresses >
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error Occured while invoking the java util service"
+ }]' doc:name="Set Payload To Error While Invoking Java Service" doc:id="5fb7f331-1d75-4375-b0a9-6c03e841774d" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b2aebece-c494-4705-9ed0-044f70dcb767" type="SALESFORCE:CONNECTIVITY, SALESFORCE:INVALID_INPUT, SALESFORCE:INVALID_RESPONSE, SALESFORCE:LIMIT_EXCEEDED, SALESFORCE:MUTUAL_AUTHENTICATION_FAILED, SALESFORCE:NOT_FOUND, SALESFORCE:RETRY_EXHAUSTED, SALESFORCE:TIMEOUT" >
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="c8db18e3-ae03-4ce3-b44d-c9280a8b150b" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while synchronizing user data with salesforce" >
+					<email:to-addresses >
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Failure while connecting to Salesforce to synchronize user data"
+ }]' doc:name="Set Payload To Error While Invoking Java Service" doc:id="c147fe76-cf9c-4352-8b49-44888c10535b" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="aaed76f1-2641-492d-b770-01e53b762af0" type="USER-SUBSCRIPTION-SYSTEM-API:BAD_REQUEST, USER-SUBSCRIPTION-SYSTEM-API:CONNECTIVITY, USER-SUBSCRIPTION-SYSTEM-API:FORBIDDEN, USER-SUBSCRIPTION-SYSTEM-API:INTERNAL_SERVER_ERROR, USER-SUBSCRIPTION-SYSTEM-API:METHOD_NOT_ALLOWED, USER-SUBSCRIPTION-SYSTEM-API:NOT_ACCEPTABLE, USER-SUBSCRIPTION-SYSTEM-API:NOT_FOUND, USER-SUBSCRIPTION-SYSTEM-API:PARSING, USER-SUBSCRIPTION-SYSTEM-API:RETRY_EXHAUSTED, USER-SUBSCRIPTION-SYSTEM-API:SECURITY, USER-SUBSCRIPTION-SYSTEM-API:SERVICE_UNAVAILABLE, USER-SUBSCRIPTION-SYSTEM-API:TIMEOUT, USER-SUBSCRIPTION-SYSTEM-API:TOO_MANY_REQUESTS, USER-SUBSCRIPTION-SYSTEM-API:UNAUTHORIZED, USER-SUBSCRIPTION-SYSTEM-API:UNSUPPORTED_MEDIA_TYPE" >
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="59bac038-b6d3-45d6-9c03-47be6a78bafa" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while synchronizing user data with salesforce" >
+					<email:to-addresses >
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value="#[%dw 2.0
+output application/json
+---
+{
+  statusCode: &quot;500&quot;,
+  message: &quot;Failure while connecting to User System API to retrieve yesterday's user details&quot;
+ }]" doc:name="Set Payload To Error While Invoking Java Service" doc:id="6d728d0d-665a-470f-aac9-f8c5157d9f15" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1013f7e6-150c-4c6d-a679-9a5c1a5b0837" type="ANY" >
+				<email:send doc:name="Send Email To the Administrator Informing About The Failure" doc:id="b7668adb-8fc7-4dd6-a8a0-50e60e567b77" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while synchronizing user information with salesforce" >
+					<email:to-addresses >
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error Occured while transforming data received from Subscription/Rail System API"
+ }]' doc:name="Set Payload To Transformation Exception" doc:id="66568eac-a3f6-4662-92c4-763ded052723" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

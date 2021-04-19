@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="alerts-suite.xml" />
+	<munit:test name="getAlertsBySubscriptionId-test" doc:id="5e76e185-83d6-489d-b943-b0643153af1b" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock Select" doc:id="f4025583-a218-45c8-906e-9315232338a7" processor="db:select">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="2e29e642-8723-4312-8cc1-66ed20912cae" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://getAlertsBySubscriptionIdtest\mock_payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					<munit-tools:variables >
+						<munit-tools:variable key="outboundHeaders" value="#[readUrl('classpath://getAlertsBySubscriptionIdtest\mock_variable_.dwl')]" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="d1ad011a-1303-4023-87f0-6f6e159e4518" >
+				<munit:payload value="#[readUrl('classpath://getAlertsBySubscriptionIdtest\set-event_payload.dwl')]" encoding="UTF-8" />
+				<munit:attributes value="#[readUrl('classpath://getAlertsBySubscriptionIdtest\set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://getAlertsBySubscriptionIdtest\set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to getAlertsBySubscriptionId" doc:id="e7840ef5-268f-4909-97e5-1d6c9478bad3" name="get-alerts-by-subscription-id"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="1a9a4098-042c-4d2a-8d7e-082bfc67d282" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import getAlertsBySubscriptionIdtest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="insertAlertBySubscriptionId-test" doc:id="ee483edf-2c58-403c-a473-99f220d99278" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock Insert" doc:id="9491b22c-ddda-4668-9b7c-6417583e7cd5" processor="db:insert">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="4cb29b72-03be-4816-aa28-f8da813688d4" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/java --- readUrl('classpath://insertAlertBySubscriptionIdtest\mock_payload.dwl')]" mediaType="application/java" encoding="UTF-8" />
+					<munit-tools:variables >
+						<munit-tools:variable key="outboundHeaders" value="#[readUrl('classpath://insertAlertBySubscriptionIdtest\mock_variable_.dwl')]" />
+					</munit-tools:variables>
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit:set-event doc:name="Set Input" doc:id="3ad27fae-ead0-47c3-bdb1-4d39a0ce58fa" >
+				<munit:payload value="#[output application/json --- readUrl('classpath://insertAlertBySubscriptionIdtest\set-event_payload.dwl')]" encoding="UTF-8" mediaType="application/json" />
+				<munit:attributes value="#[readUrl('classpath://insertAlertBySubscriptionIdtest\set-event_attributes.dwl')]" />
+				<munit:variables >
+					<munit:variable key="outboundHeaders" value="#[readUrl('classpath://insertAlertBySubscriptionIdtest\set-event_variable_.dwl')]" />
+				</munit:variables>
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to insertAlertBySubscriptionId" doc:id="ed50d3ae-a1ef-484d-8958-9953f01c69e9" name="insert-alert-by-subscription-id"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert payload" doc:id="3b73267f-8f4b-4271-908d-7259d87ec732" message="The payload does not match">
+				<munit-tools:that ><![CDATA[#[%dw 2.0
+import insertAlertBySubscriptionIdtest::assert_expression_payload
+---
+assert_expression_payload::main({payload: payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+  xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+  xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+  xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+  xmlns:servicenow="http://www.mulesoft.org/schema/mule/servicenow"
+  xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/servicenow http://www.mulesoft.org/schema/mule/servicenow/current/mule-servicenow.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+	<flow name="servicenow" doc:id="42b94cf7-2e82-40f1-9c48-9a9f618a034c" >
+		<json-logger:logger doc:name="Log Incoming Error Payload" doc:id="1fefed33-943a-4536-b8f7-de0189b6dc4b" config-ref="jsonLoggerConfig" message="payload" tracePoint="BEFORE_REQUEST"/>
+		<choice doc:name="Choice" doc:id="76964b2a-a075-4287-89d2-dcd77c2dfd6c" >
+			<when expression="#[!isEmpty(payload.errorType)]">
+				<http:request method="POST" doc:name="Request To Error API" doc:id="2b7c4236-0831-4a74-b7cb-c156d2e9cd6d" config-ref="httpRequestConfigurationErrorHandler" path="/errors/submit" outputMimeType="application/json" />
+				<json-logger:logger doc:name="Log Response From Error Handler API" doc:id="d48cde41-f1b2-4f67-aa3f-25eeb0469e97" config-ref="jsonLoggerConfig" message="payload" tracePoint="AFTER_REQUEST"/>
+				<set-variable value='#[payload.errorDetails.errorType ++ "- " ++ payload.errorDetails.errorCategory]' doc:name="Set Error Type" doc:id="a0be1727-50b4-4559-8ffa-2239d3641a38" variableName="errorType" />
+				<ee:transform doc:name="Servicenow WSC Request" doc:id="41087a76-dc52-4f26-919c-db74aed79490">
+      <ee:message>
+						<ee:set-payload resource="dwl\servicenow-wsc-request.dwl" />
+      </ee:message>
+    </ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Empty Error Type Servicenow WSC Request" doc:id="ca2a60da-14ca-4a72-a595-9d3ed0d404c9">
+					<ee:message>
+						<ee:set-payload resource="dwl\empty-error-type-servicenow-wsc-request.dwl" />
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<wsc:consume doc:id="c092c347-5f87-4c97-8051-93b4e325ab50" config-ref="servicenowWebserviceConfig" operation="insert" doc:name="Call Service Now SOAP API" />
+		<ee:transform doc:name="Servicenow WSC Response" doc:id="e953b5a3-1ecc-46c4-b125-5a1a7c359fb9">
+      <ee:message>
+				<ee:set-payload resource="dwl/servicenow-wsc-response.dwl" />
+      </ee:message>
+    </ee:transform>
+		<json-logger:logger doc:name="Payload" doc:id="3777db8a-fd5f-4269-9345-bba6088d269c" config-ref="jsonLoggerConfig" message="payload" tracePoint="END"/>
+	</flow>
+</mule>

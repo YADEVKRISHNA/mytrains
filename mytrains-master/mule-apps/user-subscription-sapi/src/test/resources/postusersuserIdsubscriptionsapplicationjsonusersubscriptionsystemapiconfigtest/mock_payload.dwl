@@ -1,0 +1,4 @@
+{
+  "statusCode": "400",
+  "message": "Subscription already exists for combination of data provided by user"
+}

@@ -1,0 +1,9 @@
+database:
+  host: "localhost"
+  username: root
+  password: "Njclabs@2020"
+  port: "3306"
+  schema: nrs
+  
+http:
+  port: "8082"

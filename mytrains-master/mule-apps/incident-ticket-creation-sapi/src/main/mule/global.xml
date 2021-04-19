@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+<apikit:config name="incidentTicketCreationSapiConfig" api="resource::3480247f-d37c-4331-9bae-dd5e280fb2be:incident-ticket-creation-sapi:1.0.0:raml:zip:incident-ticket-creation-sapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+
+	<http:listener-config name="loggerHttpConfig" doc:name="HTTP Listener config" doc:id="6db3335a-838c-42d0-af45-8f8bb5281990" >
+		<http:listener-connection host="0.0.0.0" port="${http.loggerPort}" />
+	</http:listener-config>
+
+  <http:request-config name="httpRequestConfigurationErrorHandler" doc:name="HTTP Request configuration" doc:id="4315ea0f-e0a8-423d-b5c2-52c7e1c87439" responseTimeout="30000" >
+		<http:request-connection host="${exceptionRequest.host}" />
+	</http:request-config>
+    
+	<jms:config name="jmsConfig" doc:name="JMS Config"
+		doc:id="14c3d1c6-1032-4959-afed-61ede22c74c3">
+		<jms:active-mq-connection username="${jms.username}"
+			password="${jms.password}">
+			<jms:factory-configuration
+				brokerUrl="${jms.url}" initialRedeliveryDelay="100"
+				redeliveryDelay="100" maxRedelivery="5" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<http:request-config name="httpRequestConfigurationServicenow"
+		doc:name="HTTP Request configuration"
+		doc:id="ad212a70-85d8-4449-b6c2-5a4d072fd52b">
+		<http:request-connection protocol="HTTPS">
+			<http:authentication>
+				<http:basic-authentication
+					username="${servicenow.username}" password="${servicenow.password}" />
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+
+	<wsc:config name="servicenowWebserviceConfig"
+		doc:name="Web Service Consumer Config">
+		
+		<wsc:connection encoding="UTF-8"
+			wsdlLocation="${servicenow.wsdl}"
+			port="${servicenow.port}" service="${servicenow.service}"
+			address="${servicenow.address}" soapVersion="SOAP12">
+			<wsc:custom-transport-configuration>
+				<wsc:http-transport-configuration requesterConfig="httpRequestConfigurationErrorHandler"/>
+			</wsc:custom-transport-configuration>
+			<wsc:web-service-security actor="${servicenow.actor}" />
+			<!-- <wsc:web-service-security actor="https://schemas.xmlsoap.org/soap/actor/next" 
+				/> -->
+		
+</wsc:connection>
+
+</wsc:config>
+  <configuration-properties doc:name="Configuration properties" doc:id="aab8f56e-6acf-4f4c-b21c-c6e489c6fbac" file="config\servicenow.incident.creation.sys.api.${env}.yaml" />
+	<global-property doc:name="Global Property" doc:id="32b22d68-3f76-4da7-a368-7c80b6ec448c" name="env" value="dev" />
+	<json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="ff641b58-d0ba-4669-b9f7-fe0d0ea83ac3" applicationName="incident-ticket-creation-api" applicationVersion="1.0.0-SNAPSHOT" environment="${env}" />
+</mule>

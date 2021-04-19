@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/http 
+	http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+ http://www.mulesoft.org/schema/mule/core 
+ http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<apikit:config name="userIdentityMgmtSapiConfig"
+		api="resource::3480247f-d37c-4331-9bae-dd5e280fb2be:user-identity-mgmt-sapi:2.0.0:raml:zip:user-identity-mgmt-sapi.raml" outboundHeadersMapName="outboundHeaders"
+		httpStatusVarName="httpStatus" />
+	<configuration-properties doc:name="Configuration properties" doc:id="70c9492e-4221-412f-b9b6-3d60c1e10d5a"
+		file="config\user.identity.mgmt.sys.api.${env}.yaml" />
+	<global-property doc:name="Global Property" doc:id="f305a3cd-6446-4cf0-b595-6342601cfbd8" name="env" value="dev" />
+	<configuration doc:name="Configuration" doc:id="60b6a6ae-3d79-493a-8ff1-db2918951c3e" defaultErrorHandler-ref="globalError_Handler" />
+	<http:request-config name="httpRequestConfigurationExceptionCategorization" doc:name="HTTP Request configuration" doc:id="6936f052-5a89-4cf4-87df-4fb963e3c3fc"
+		responseTimeout="30000">
+		<http:request-connection host="njc-exception-categorization-sapi.us-e2.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="httpRequestConfigurationServicenow" doc:name="HTTP Request configuration" doc:id="5ce709a8-ccf4-4e4c-8eea-9163e50f52d4"
+		responseTimeout="30000">
+		<http:request-connection host="njc-incident-ticket-creation-sapi.us-e2.cloudhub.io" />
+	</http:request-config>
+	<json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="76e97768-ade8-495f-a03d-50cef77c68df"
+		applicationName="user-identity-management-system" applicationVersion="1.0.0-SNAPSHOT" environment="${env}" />
+	<error-handler name="globalError_Handler" doc:id="423efc9f-8074-43c7-b2ee-e2f0198d5aff">
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="439f419e-55ea-4265-94e4-9c24745628c5"
+			type="OKTA:ERROR">
+			<flow-ref doc:name="Invoke Generic Error Handling API Flow" doc:id="f8030fbc-c4b7-4677-a52a-8768f86e86ab" name="invoke-generic-error-handling-api" />
+
+			<json-logger:logger doc:name="JSON Logger Before Transform Message" doc:id="8105c4ca-d17c-4bee-a889-cf73a8c1a8db" config-ref="jsonLoggerConfig" message="#[error.muleMessage.payload]" tracePoint="BEFORE_TRANSFORM" priority="TRACE"/>
+			<ee:transform doc:name="Error Code Transform Message" doc:id="ad7a94de-2901-45cb-b85f-ae6ca9bd5b91">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorCode": if(!isEmpty(error.muleMessage.payload))
+	 				error.muleMessage.payload.errorCode 
+	 			 else 
+	 			 	message.attributes.httpStatus,
+	"errorType": error.errorType.identifier as String ++ ":" ++ error.errorType.namespace as String,
+	"errorMessage": if(!isEmpty(error.muleMessage.payload) and
+					   !isEmpty(error.muleMessage.payload.errorCauses.*errorSummary)) 
+						error.muleMessage.payload.errorCauses.*errorSummary
+					else
+						error.detailedDescription
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="JSON Logger Error Exit" doc:id="7bf9583e-020c-4a83-a9a2-215b53663561" config-ref="jsonLoggerConfig" message="JSON Logger Error Exit" tracePoint="END"/>
+		</on-error-propagate>
+
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="36c3585a-3a99-4ff4-b673-5521bd600249"
+			type="OKTA:UNAUTHORIZED">
+
+			<ee:transform doc:name="Error Code Transform Message" doc:id="b1de24a8-426b-4825-9627-953302d7d1b6">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorCode": 401,
+	"errorType": error.errorType.identifier as String ++ ":" ++ error.errorType.namespace as String,
+	"errorMessage": "Invalid Client Credentials"
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+
+		</on-error-propagate>
+
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5bfb5366-4d33-4ea0-b3dd-2d8aae5e1a09" type="ANY">
+			<flow-ref doc:name="Invoke Generic Error Handling API Flow" doc:id="a33f71e6-8503-44eb-8cfb-d73f64ae4f24" name="invoke-generic-error-handling-api" />
+			<json-logger:logger doc:name="JSON Logger Before Transform" doc:id="618d1190-3bf4-42c0-957d-0aeed74ebe3f" config-ref="jsonLoggerConfig" message="JSON Logger Any Error Entry" tracePoint="BEFORE_TRANSFORM" priority="TRACE"/>
+			<ee:transform doc:name="Error Code Transform Message" doc:id="bed35182-e7b2-477f-86e6-36c9c2efbc47">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorCode": error.muleMessage.attributes.StatusCode,
+	"errorMessage": error.detailedDescription
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="JSON Logger Any Error Exit" doc:id="9238301e-0291-487c-8758-86f35b6322f0" config-ref="jsonLoggerConfig" message="JSON Logger Any Error Exit" tracePoint="END"/>
+		</on-error-propagate>
+
+	</error-handler>
+
+	<http:listener-config name="httpListnerConfigurationUserIdentityMgmtSysApi">
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+
+
+	<http:request-config name="httpRequestConfigurationOktaMain" doc:name="HTTP Request configuration" doc:id="578c147d-fee0-4ff4-a956-2692e3fa0325"
+		responseTimeout="30000">
+		<http:request-connection protocol="HTTPS" host="${okta.host}" port="${okta.port}" />
+	</http:request-config>
+	<flow name="servicenow-incident-creation-flow" doc:id="77b6f36e-1bc0-444b-9920-63c1e4415d93">
+		<choice doc:name="Choice" doc:id="67dd66c0-b31b-4892-9e60-2d704363506d">
+			<when
+				expression='#[["Redirection","Mule Expression Error","Client-Side Technical Error","Server-Side Technical Error","Invalid Error Code"] contains payload.errorDetails.errorCategory]'>
+				<json-logger:logger doc:name="LoggerJSON Logger Service Now Entry" doc:id="4bf4c6bf-8716-473e-9403-d540b98c54d8" config-ref="jsonLoggerConfig" message="LoggerJSON Logger Service Now Entry"/>
+				<http:request method="POST" doc:name="Request To Incident Ticket Creation" doc:id="1d282d6d-6d8c-4fa5-be96-d33f05623b61" config-ref="httpRequestConfigurationServicenow" path="/api/incidents"
+					outputMimeType="application/json" responseTimeout="30000">
+					<http:body><![CDATA[#[vars.errorPayload]]]></http:body>
+				</http:request>
+				<json-logger:logger doc:name="JSON Logger After Request" doc:id="5c745863-3393-4d79-a2f6-c580532729c3" config-ref="jsonLoggerConfig" message="JSON Logger After Request" tracePoint="AFTER_REQUEST" priority="TRACE"/>
+				<ee:transform doc:name="Incident Transform Message" doc:id="aafebe64-59ad-4b19-8219-54db077b6a6e">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="JSON Logger Service Now Exit" doc:id="f0b81ef9-a5d6-4031-bd38-895d7889cf1e" config-ref="jsonLoggerConfig" message="LoggerJSON Logger Service Now Exit"/>
+			</when>
+		</choice>
+	</flow>
+	<http:request-config name="httpRequestConfigurationOktaUserAuthentication" doc:name="HTTP Request configuration" doc:id="c4e0199f-4a4b-4438-8922-f38bc60a774c">
+		<http:request-connection protocol="HTTPS" host="${okta.host}" port="${okta.port}">
+			<http:authentication>
+				<http:basic-authentication username="#[vars.oktaClientId]" password="#[vars.oktaClientSecret]" />
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+	<sub-flow name="invoke-generic-error-handling-api" doc:id="7724677b-8d54-460f-ba74-0dc36dd5c9c3">
+		<json-logger:logger doc:name="JSON Log Error Invoke Entry" doc:id="18cd3f84-d265-4265-911f-9c15723ae682" config-ref="jsonLoggerConfig" message="JSON Log Error Invoke Entry"/>
+		<ee:transform doc:name="Transform Error Object To JSON" doc:id="85a05ef4-c952-4526-baa5-6972130c3978">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set Error Payload" doc:id="707d42ab-4460-49c0-a9ad-d73643dbdf5d" variableName="errorPayload" />
+		<http:request method="POST" doc:name="Request To Error API" doc:id="4d696425-23b0-412c-ac01-349c6c7f4832"
+			config-ref="httpRequestConfigurationExceptionCategorization" path="/errors/submit" outputMimeType="application/json" />
+		<json-logger:logger doc:name="JSON Log Error Payload From Error API" doc:id="9fd8bdbe-4cd8-4502-8647-39d64452335a" config-ref="jsonLoggerConfig" message="JSON Log Error Payload From Error API" tracePoint="END"/>
+		<!-- <flow-ref doc:name="Call to ServiceNow" doc:id="f3089b2b-9efa-4268-aeaf-40f0a588dd24" name="servicenow-incident-creation-flow" /> -->
+	</sub-flow>
+
+</mule>

@@ -1,0 +1,6 @@
+system:
+  host: user-subscription-sapi.us-e2.cloudhub.io
+  port: "80"
+  basepath: api
+  protocol: HTTP
+  responseTimeout: "10000"

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="rail-delay-notifications-test-suite.xml" />
+	<munit:test name="rail-delay-notifications-test-suite-rail-delay-notificationsTest1" doc:id="8b208a9e-1956-476e-be13-7547581284ea" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="56fbc5c4-787c-4259-8fa0-ae30c23f013e" processor="user-subscription-system-api:get-locations">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="6d16b45c-64d9-42fd-a28a-32641b0ce72a" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[output application/json --- readUrl('classpath://locations_payload.dwl')]" mediaType="application/json" />
+				</munit-tools:then-return>
+	
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to rail-delay-notifications" doc:id="a408c07b-3aa3-498f-9082-99d67e50a68a" name="rail-delay-notifications"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call" doc:id="05d2e86d-0da2-4c4b-bc8c-d4cd393d0633" processor="national-rail-sapi:get-arrivals">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Get arrivals" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="rail-delay-notifications-test-suite-rail-delay-notificationsTest" doc:id="3aa6bfd2-5cf8-4748-9c55-737d19eea1d3" description="Test">
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to rail-delay-notifications" doc:id="d85394aa-19f3-4b8e-8ce0-e755475898ff" name="rail-delay-notifications"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call" doc:id="38982210-0225-458e-aa8b-19175d3b656a" processor="user-subscription-system-api:get-locations">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Get locations" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

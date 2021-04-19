@@ -1,0 +1,5 @@
+soap:
+  accessToken: "d034126f-aaad-41a8-bdbc-1ee0848c7d5d"
+  
+http:
+  port: "8081"

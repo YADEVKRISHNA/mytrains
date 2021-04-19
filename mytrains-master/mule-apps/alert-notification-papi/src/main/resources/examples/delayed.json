@@ -1,0 +1,464 @@
+{
+  "arrivals": {
+    "generatedAt": "2020-05-05T15:52:20.7337341+01:00",
+    "locationName": "Basingstoke",
+    "crs": "BSK",
+    "filterLocationName": "London Waterloo",
+    "filtercrs": "WAT",
+    "nrccMessages": {
+      "message": "Reduced timetable in operation. In line with government advice, you should only be travelling if you are a key worker or it is essential for you to do so. If you must travel, always practice social distancing. More details can be found <A href=\"http://nationalrail.co.uk/service_disruptions/245388.aspx\">here</A>."
+    },
+    "platformAvailable": "true",
+    "trainServices": {
+      "service": {
+        "sta": "16:03",
+        "eta": "16:05",
+        "platform": "3",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "XrCSqs+q1NN9jcO2aG/f0g==",
+        "rsid": "SW953000",
+        "origin": {
+          "location": {
+            "locationName": "Bournemouth",
+            "crs": "BMH"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Bournemouth",
+              "crs": "BMH",
+              "st": "14:53",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "New Milton",
+              "crs": "NWM",
+              "st": "15:04",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Brockenhurst",
+              "crs": "BCU",
+              "st": "15:12",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Central",
+              "crs": "SOU",
+              "st": "15:28",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Airport Parkway",
+              "crs": "SOA",
+              "st": "15:38",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Winchester",
+              "crs": "WIN",
+              "st": "15:47",
+              "at": "15:48"
+            }
+          }
+        }
+      },
+      "service": {
+        "sta": "16:07",
+        "eta": "On time",
+        "platform": "3",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "bb5gzoHu7iG9Q5IxBkZD+w==",
+        "rsid": "SW653000",
+        "origin": {
+          "location": {
+            "locationName": "Salisbury",
+            "crs": "SAL"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Salisbury",
+              "crs": "SAL",
+              "st": "15:21",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Grateley",
+              "crs": "GRT",
+              "st": "15:33",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Andover",
+              "crs": "ADV",
+              "st": "15:41",
+              "at": "15:43"
+            },
+            "callingPoint": {
+              "locationName": "Whitchurch (Hampshire)",
+              "crs": "WCH",
+              "st": "15:49",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Overton",
+              "crs": "OVR",
+              "st": "15:55",
+              "et": "On time"
+            }
+          }
+        }
+      },
+      "service": {
+        "sta": "16:30",
+        "eta": "On time",
+        "platform": "3",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "e9/4/Lt8zm8cOOR1y+1xZg==",
+        "rsid": "SW653200",
+        "origin": {
+          "location": {
+            "locationName": "Salisbury",
+            "crs": "SAL"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Salisbury",
+              "crs": "SAL",
+              "st": "15:47",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Grateley",
+              "crs": "GRT",
+              "st": "15:59",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Andover",
+              "crs": "ADV",
+              "st": "16:07",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Whitchurch (Hampshire)",
+              "crs": "WCH",
+              "st": "16:15",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Overton",
+              "crs": "OVR",
+              "st": "16:21",
+              "et": "On time"
+            }
+          }
+        }
+      },
+      "service": {
+        "sta": "16:34",
+        "eta": "On time",
+        "platform": "3",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "JPHmNTqnLVJCvoUr3BsKwA==",
+        "rsid": "SW953200",
+        "origin": {
+          "location": {
+            "locationName": "Bournemouth",
+            "crs": "BMH"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Bournemouth",
+              "crs": "BMH",
+              "st": "15:18",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Pokesdown",
+              "crs": "POK",
+              "st": "15:22",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Christchurch",
+              "crs": "CHR",
+              "st": "15:26",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "New Milton",
+              "crs": "NWM",
+              "st": "15:33",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Brockenhurst",
+              "crs": "BCU",
+              "st": "15:41",
+              "at": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Central",
+              "crs": "SOU",
+              "st": "15:56",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Airport Parkway",
+              "crs": "SOA",
+              "st": "16:04",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Eastleigh",
+              "crs": "ESL",
+              "st": "16:08",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Winchester",
+              "crs": "WIN",
+              "st": "16:18",
+              "et": "On time"
+            }
+          }
+        }
+      },
+      "service": {
+        "sta": "17:03",
+        "eta": "On time",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "2tbcnDqP4UB4g6Rv2Rtrhg==",
+        "rsid": "SW953400",
+        "origin": {
+          "location": {
+            "locationName": "Bournemouth",
+            "crs": "BMH"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Bournemouth",
+              "crs": "BMH",
+              "st": "15:53",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "New Milton",
+              "crs": "NWM",
+              "st": "16:04",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Brockenhurst",
+              "crs": "BCU",
+              "st": "16:12",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Central",
+              "crs": "SOU",
+              "st": "16:28",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Airport Parkway",
+              "crs": "SOA",
+              "st": "16:38",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Winchester",
+              "crs": "WIN",
+              "st": "16:47",
+              "et": "On time"
+            }
+          }
+        }
+      },
+      "service": {
+        "sta": "17:07",
+        "eta": "On time",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "PyTRG8+Sgs6wXIM2qU/9fw==",
+        "rsid": "SW653400",
+        "origin": {
+          "location": {
+            "locationName": "Salisbury",
+            "crs": "SAL"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Salisbury",
+              "crs": "SAL",
+              "st": "16:21",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Grateley",
+              "crs": "GRT",
+              "st": "16:33",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Andover",
+              "crs": "ADV",
+              "st": "16:41",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Whitchurch (Hampshire)",
+              "crs": "WCH",
+              "st": "16:49",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Overton",
+              "crs": "OVR",
+              "st": "16:55",
+              "et": "On time"
+            }
+          }
+        }
+      },
+      "service": {
+        "sta": "17:34",
+        "eta": "On time",
+        "operator": "South Western Railway",
+        "operatorCode": "SW",
+        "serviceType": "train",
+        "serviceID": "MSqY9UY4ii+fEQ77E+TiYg==",
+        "rsid": "SW953600",
+        "origin": {
+          "location": {
+            "locationName": "Bournemouth",
+            "crs": "BMH"
+          }
+        },
+        "destination": {
+          "location": {
+            "locationName": "London Waterloo",
+            "crs": "WAT"
+          }
+        },
+        "previousCallingPoints": {
+          "callingPointList": {
+            "callingPoint": {
+              "locationName": "Bournemouth",
+              "crs": "BMH",
+              "st": "16:18",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Pokesdown",
+              "crs": "POK",
+              "st": "16:22",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Christchurch",
+              "crs": "CHR",
+              "st": "16:26",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "New Milton",
+              "crs": "NWM",
+              "st": "16:33",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Brockenhurst",
+              "crs": "BCU",
+              "st": "16:41",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Central",
+              "crs": "SOU",
+              "st": "16:56",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Southampton Airport Parkway",
+              "crs": "SOA",
+              "st": "17:04",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Eastleigh",
+              "crs": "ESL",
+              "st": "17:08",
+              "et": "On time"
+            },
+            "callingPoint": {
+              "locationName": "Winchester",
+              "crs": "WIN",
+              "st": "17:18",
+              "et": "On time"
+            }
+          }
+        }
+      }
+    }
+  }
+}

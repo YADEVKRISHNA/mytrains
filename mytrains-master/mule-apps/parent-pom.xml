@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) MuleSoft, Inc. All rights reserved. http://www.mulesoft.com The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License, a copy of which has been included with this distribution
+  in the LICENSE.txt file. -->
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- include the bill of materials bom.xml -->
+  <parent>
+    <groupId>com.njclabs</groupId>
+    <artifactId>solutions-bom</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>./bom.xml</relativePath>
+  </parent>
+
+  <artifactId>solutions-parent-pom</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>solutions-parent-pom</name>
+
+
+  <!-- IMPORTANT: Due to a bug in MUnit, this file must be installed into the local Maven repo after every change: mvn -f parent-pom.xml install:install-file
+    -Dpackaging=pom -Dfile=parent-pom.xml -DpomFile=parent-pom.xml -->
+
+  <properties>
+    <!-- required for license-maven-plugin: absolute path of directory in which this file is located -->
+    <buildRootDir>${project.basedir}</buildRootDir>
+    <munit.skip>true</munit.skip>
+
+    <!-- the layers of API-led connectivity, used for assigning layer in Visualizer: must be assigned to api.layer property -->
+    <api.layer.eapi>Experience</api.layer.eapi>
+    <api.layer.papi>Process</api.layer.papi>
+    <api.layer.sapi>System</api.layer.sapi>
+    <api.layer.backend>Backend</api.layer.backend>
+    <api.layer.none>None</api.layer.none>
+
+    <!-- for automated deployments -->
+    <!-- <deployment.env>Sandbox</deployment.env> -->
+    <deployment.prefix>njc-</deployment.prefix>
+    <deployment.suffix>-dev</deployment.suffix>
+    <deployment.name>${deployment.prefix}${project.artifactId}${deployment.suffix}</deployment.name>
+
+    <!-- 1 minute per attempt (to check if app has started) times 10 attempts (10 is hard-coded) = 1*60*1000*10 -->
+    <deployment.timeoutMillis>600000</deployment.timeoutMillis>
+    
+    <!-- for automated deployments via ARM -->
+    <ap.uri>https://anypoint.mulesoft.com</ap.uri>
+    
+    <!-- <ap.username>set with -Dap.username=...</ap.username> <ap.password>set with -Dap.password=...</ap.password> -->
+    <!-- <ap.username>siva_training_026</ap.username>
+    <ap.password>Mulesoft1234</ap.password> -->
+    
+    <!-- master\subOrg1\subOrg2 -->
+    <!-- <ap.businessGroup>NJC Labs</ap.businessGroup> -->
+    
+    <!-- requires AP environments to have the same name as the env property value in Mule apps (which determines the property files to load) -->
+    <ap.environment>${deployment.env}</ap.environment>
+    
+    <!-- for automated deployments to CH -->
+    <!-- http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions -->
+    <!-- us-east-1, us-east-2, us-west-1, us-west-2, eu-west-1, eu-west-2, eu-central-1, ... -->
+    <ap.region>us-east-1</ap.region>
+    <ch.workers>1</ch.workers>
+    
+    <!-- MICRO (0.1 vCores), SMALL (0.2 vCores), MEDIUM (1 vCore), LARGE (2 vCores), ... -->
+    <ch.workerType>MICRO</ch.workerType>
+    
+    <!-- for API autodiscovery -->
+    <!-- <ap.client_id>5eeea7c33afc43728f63623feaea2137</ap.client_id>
+    <ap.client_secret>30E33C7aA08546Cc9eE2AE1CDee52286</ap.client_secret> -->
+
+    <!-- set encrypt.key for decrypting secure (encryped) properties files (but don't set it here!) -->
+  </properties>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <!-- and must exclude some file types from filtering in maven-resources-plugin config below -->
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+        <!-- and must exclude some file types from filtering in maven-resources-plugin config below -->
+      </testResource>
+      <testResource>
+        <directory>src/test/funmon</directory>
+        <filtering>true</filtering>
+        <targetPath>funmon</targetPath>
+      </testResource>
+    </testResources>
+    <pluginManagement>
+      <plugins>
+        <!-- allow resource files to contain references to Maven properties like ${prop.name} -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <configuration>
+            <nonFilteredFileExtensions>
+              <!-- exclude all binary files from filtering! -->
+              <nonFilteredFileExtension>p12</nonFilteredFileExtension>
+              <nonFilteredFileExtension>crt</nonFilteredFileExtension>
+              <nonFilteredFileExtension>pem</nonFilteredFileExtension>
+            </nonFilteredFileExtensions>
+          </configuration>
+        </plugin>
+        <!-- to be able to build and package Mule apps and domains and to deploy Mule apps to CH -->
+        <plugin>
+          <groupId>org.mule.tools.maven</groupId>
+          <artifactId>mule-maven-plugin</artifactId>
+          <extensions>true</extensions>
+          <configuration>
+            <cloudHubDeployment>
+              <uri>${ap.uri}</uri>
+              <username>${ap.username}</username>
+              <password>${ap.password}</password>
+              <businessGroup>${ap.businessGroup}</businessGroup>
+              <environment>${ap.environment}</environment>
+              <region>${ap.region}</region>
+              <muleVersion>${app.runtime.semver}</muleVersion>
+              <workers>${ch.workers}</workers>
+              <workerType>${ch.workerType}</workerType>
+              <objectStoreV2>true</objectStoreV2>
+              <persistentQueues>false</persistentQueues>
+              <applicationName>${deployment.name}</applicationName>
+              <deploymentTimeout>${deployment.timeoutMillis}</deploymentTimeout>
+              <properties>
+                <anypoint.platform.config.analytics.agent.enabled>true</anypoint.platform.config.analytics.agent.enabled>
+                <!-- api.layer must be set in every concrete Mule app! -->
+                <anypoint.platform.visualizer.layer>${api.layer}</anypoint.platform.visualizer.layer>
+                <env>${deployment.env}</env>
+                <encrypt.key>${encrypt.key}</encrypt.key>
+                <anypoint.platform.client_id>${ap.client_id}</anypoint.platform.client_id>
+                <anypoint.platform.client_secret>${ap.client_secret}</anypoint.platform.client_secret>
+                <!-- concrete Mule apps can provide their own props which will be merged with the props given here -->
+              </properties>
+            </cloudHubDeployment>
+          </configuration>
+        </plugin>
+        
+        <!-- to be able to run MUnit tests -->
+        <plugin>
+          <groupId>com.mulesoft.munit.tools</groupId>
+          <artifactId>munit-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>test</id>
+              <phase>test</phase>
+              <goals>
+                <goal>test</goal>
+                <goal>coverage-report</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <skipMunitTests>${munit.skip}</skipMunitTests>
+            <runtimeVersion>${app.runtime}</runtimeVersion>
+            <runtimeProduct>MULE_EE</runtimeProduct>
+            <environmentVariables>
+              <!-- this implies that all tests run in the same Maven build must use the same encrypt.key -->
+              <encrypt.key>${encrypt.key}</encrypt.key>
+            </environmentVariables>
+            <coverage>
+              <runCoverage>true</runCoverage>
+              <failBuild>true</failBuild>
+              
+              <!-- TODO: set achievable coverage limits: -->
+              <requiredApplicationCoverage>0</requiredApplicationCoverage>
+              <requiredResourceCoverage>0</requiredResourceCoverage>
+              <requiredFlowCoverage>0</requiredFlowCoverage>
+              <formats>
+                <format>console</format>
+                <format>html</format>
+              </formats>
+            </coverage>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+  <!-- don't define any dependencies -->
+  <dependencies />
+</project>

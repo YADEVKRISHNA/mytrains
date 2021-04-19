@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	
+	xmlns:user-subscription-system-api="http://www.mulesoft.org/schema/mule/user-subscription-system-api"
+	xmlns:national-rail-sapi="http://www.mulesoft.org/schema/mule/national-rail-sapi" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd 
+http://www.mulesoft.org/schema/mule/user-subscription-system-api http://www.mulesoft.org/schema/mule/user-subscription-system-api/current/mule-user-subscription-system-api.xsd
+http://www.mulesoft.org/schema/mule/national-rail-sapi http://www.mulesoft.org/schema/mule/national-rail-sapi/current/mule-national-rail-sapi.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+	<http:listener-config
+		name="alertNotificationPapiHttpListenerConfig">
+		<http:listener-connection host="0.0.0.0"
+			port="${http.port}" />
+	</http:listener-config>
+	<apikit:config name="alertNotificationPapiConfig"
+		api="resource::3480247f-d37c-4331-9bae-dd5e280fb2be:alert-notification-papi:1.0.0:raml:zip:alert-notification-papi.raml"
+		outboundHeadersMapName="outboundHeaders"
+		httpStatusVarName="httpStatus" />	
+		<http:request-config name="alertNotificationPapihttpRequestConfiguration" doc:name="HTTP Request configuration" doc:id="508e23b0-ec71-44dd-9cf1-146e8b6c407b" basePath="/api" >
+		<http:request-connection host="njc-national-rail-sapi.us-e2.cloudhub.io"/>
+	</http:request-config>
+	<email:smtp-config name="emailSmtp" doc:name="Email SMTP" doc:id="1d63433d-6d12-4919-87ca-3d398e0b7fdf" >
+		<email:smtp-connection host="smtp.gmail.com" port="587" user="nationalrailalert@gmail.com" password="R@il432!" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<user-subscription-system-api:config name="userSubscriptionSystemApiConfig" doc:name="User Subscription System API Config" doc:id="68ee9f96-d24a-42e7-a6ad-b61d296c342d" property_host="${subscription.host}" property_basePath="${subscription.basepath}" property_protocol="${subscription.protocol}" property_responseTimeout="${subscription.responseTimeout}" property_port="${subscription.port}">
+		<user-subscription-system-api:connection />
+	</user-subscription-system-api:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="4970c887-67de-4790-a099-ef9eb3dc2938" file="config\alert.notification.process.${env}.yaml" />
+	<national-rail-sapi:config name="nationalRailSapiConfig" doc:name="National Rail SAPI Config" doc:id="f6acb204-0496-4801-a27d-bfeb9ba3c128" property_host="${rail.host}" property_port="${rail.port}" property_basePath="${rail.basepath}" property_protocol="${rail.protocol}" property_responseTimeout="${rail.responseTimeout}">
+		<national-rail-sapi:connection />
+	</national-rail-sapi:config>
+	<vm:config name="alertNotificationPapiVmConfig" doc:name="VM Config" doc:id="666b68a5-b1b6-4a7d-99ce-b56f09b1811e">
+		<vm:connection />
+		<vm:queues >
+			<vm:queue queueName="delayedTrain" />
+		</vm:queues>
+	</vm:config>
+	<salesforce:sfdc-config name="alertNotificationPapiSalesforceConfig" doc:name="Salesforce Config" doc:id="f5b5b419-34ee-4a21-8b81-37d9550b0179" >
+		<salesforce:basic-connection username="${salesforce.username}" password="${salesforce.password}" securityToken="${salesforce.securityToken}" url="${salesforce.authURL}" />
+	</salesforce:sfdc-config>
+	<json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="eb9a3c0d-e783-4242-b3de-187eb1f0a528" applicationName="alert-notification-papi" applicationVersion="1.0.0-SNAPSHOT" environment="${muleEnv}" />
+	<global-property doc:name="Global Property" doc:id="57571d96-1506-47e9-962b-9002c4a11c63" name="muleEnv" value="dev" />
+	<global-property doc:name="Global Property" doc:id="e47ab4d8-e3ac-45ef-a7da-9e8d16def214" name="env" value="dev" />
+	
+	
+
+</mule>

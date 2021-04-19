@@ -1,0 +1,5 @@
+soap:
+  accessToken: "![tggmRnVMsh8C9rpCX1ULOyWJeQNgoYGu6MxkqoJa1uzpIgXYBjkvnA==]"
+  
+http:
+  port: "8084"

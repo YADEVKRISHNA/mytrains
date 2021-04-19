@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="arrivals" format="json">
+      <types:shape format="weave" example="examples/subscription_dataweave.json"><![CDATA[%dw 2.0
+
+type arrivals = Array<{|  subscriptionId: Number {"typeId": "int"},   userId: Number {"typeId": "int"},   sourceLocationCode: String,   destinationLocationCode: String,   fromTime: String,   toTime: String,   advanceNotificationMins: Number {"typeId": "int"}|}> {"example": "[{\\\"subscriptionId\\\":1,\\\"userId\\\":3,\\\"sourceLocationCode\\\":\\\"GLC\\\",\\\"destinationLocationCode\\\":\\\"DBC\\\",\\\"fromTime\\\":\\\"16:45:00Z\\\",\\\"toTime\\\":\\\"17:50:00Z\\\",\\\"advanceNotificationMins\\\":120},{\\\"subscriptionId\\\":7,\\\"userId\\\":3,\\\"sourceLocationCode\\\":\\\"GLC\\\",\\\"destinationLocationCode\\\":\\\"GLC\\\",\\\"fromTime\\\":\\\"16:45:00Z\\\",\\\"toTime\\\":\\\"17:50:00Z\\\",\\\"advanceNotificationMins\\\":120},{\\\"subscriptionId\\\":10,\\\"userId\\\":3,\\\"sourceLocationCode\\\":\\\"GLC\\\",\\\"destinationLocationCode\\\":\\\"WAT\\\",\\\"fromTime\\\":\\\"16:45:00Z\\\",\\\"toTime\\\":\\\"17:50:00Z\\\",\\\"advanceNotificationMins\\\":120}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#1652da1d-d3ec-411f-b5d9-87fd3f278e66">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="arrivals"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#f72c3912-63d2-40b6-be0b-0fc6463247fe">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="arrivals"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#f70760b6-4968-4677-8d02-6d2665963c16"/>
+  <types:enrichment select="#7d03abb4-8f01-458b-85cc-85c4735f9eeb"/>
+  <types:enrichment select="#3776685b-c828-4b7e-a3fa-2a88959c92a3"/>
+</types:mule>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="get-alerts-by-subscription-id" doc:id="da5f546c-d8c5-442e-9140-6da67e895382" >
+		<json-logger:logger doc:name="JSON Logger Entry Get Alerts" doc:id="4425e4c5-9425-44e0-bd46-82a18429f30f" message="JSON Logger Entry Get Alerts" config-ref="jsonLoggerConfig"/>
+		<db:select doc:name="Get Alerts By Subscription Id" doc:id="2e29e642-8723-4312-8cc1-66ed20912cae" config-ref="databaseConfig">
+			<error-mapping targetType="US_SUB_SAPI:ALRT_BY_SUB_ID" />
+			<db:sql><![CDATA[select delay_type_flag,alert_transaction_id,delay_time,creation_timestamp from ALERT where subscription_id =:subscription_id]]></db:sql>
+			<db:input-parameters><![CDATA[#[subscription_id : attributes.uriParams.subscriptionId]]]></db:input-parameters>
+		</db:select>
+		<json-logger:logger doc:name="JSON Logger Before Validation" doc:id="dde5e92d-7d1f-41f7-a860-fb7b219ff447" config-ref="jsonLoggerConfig" message="JSON Logger Before Validation" tracePoint="BEFORE_REQUEST" priority="TRACE"/>
+		<validation:validate-size doc:name="Validate Alerts Available Or Not" doc:id="5b05be79-a89b-43a2-81f2-5f67d03b1363" config-ref="validationConfig" value="#[payload]" min="1" message="No alerts available for this subscription" />
+		<json-logger:logger doc:name="JSON Logger Before Transformation" doc:id="ba9ea18e-9998-4d9c-99cb-e8369284ff74" config-ref="jsonLoggerConfig" message="JSON Logger Before Transformation" tracePoint="BEFORE_TRANSFORM" priority="TRACE"/>
+		<ee:transform doc:name="Alerts to JSON" doc:id="d771b961-f974-4216-b4c6-421dc6c388d4">
+			<ee:message>
+				<ee:set-payload resource="dwl\alerts-to-json.dwl" />
+			
+</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Exit Get Alerts" doc:id="edb55b53-3bc0-4a30-802e-2a1f0b51dd75" message="JSON Logger Exit Get Alerts" config-ref="jsonLoggerConfig" tracePoint="END"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1629e9d2-8e3f-4b13-8df2-93e5e361f932" when="#[error.description == 'No alerts available for this subscription']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "204",
+  message: "No alerts available for this subscription"
+ }]' doc:name="Set No Alerts Available Payload" doc:id="ddfe74c8-c4b5-4be2-b216-5be0c5b6a94a" />
+				<set-variable value="204" doc:name='Set Http Status Code To "204 No Content Found"' doc:id="ce67203f-7c4e-4ec4-b019-4a4d73618381" variableName="httpStatus" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<sub-flow name="insert-alert-by-subscription-id" doc:id="31a5479c-687b-417d-86e2-6d78476cec0c" >
+		<json-logger:logger doc:name="JSON Logger Entry Insert Alerts" doc:id="84c727bf-3e4e-4de8-a03e-63af4fded46d" message="JSON Logger Entry Insert Alerts" config-ref="jsonLoggerConfig"/>
+		<db:insert doc:name="Create Alerts By Subscription Id" doc:id="4cb29b72-03be-4816-aa28-f8da813688d4" config-ref="databaseConfig">
+			<error-mapping targetType="US_SUB_SAPI:INSERT_ALERT_BY_SUB_ID" />
+			<db:sql ><![CDATA[insert into ALERT(delay_type_flag,subscription_id,delay_time) values(:delay_type_flag,:subscription_id,:delay_time)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{subscription_id : payload.subscriptionId,
+ delay_type_flag : payload.delayType,
+ delay_time : payload.delayMins ,
+}]]]></db:input-parameters>
+		</db:insert>
+		<json-logger:logger doc:name="JSON Logger Exit Insert Alerts" doc:id="43d2541d-8548-45f4-8aa2-ae960f6d2c5c" message="JSON Logger Exit Insert Alerts" config-ref="jsonLoggerConfig"/>
+
+	</sub-flow>
+
+</mule>

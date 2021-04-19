@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+	<flow name="get-all-user-details" doc:id="f6128fed-9c5f-468d-ab0d-159b7208e409" >
+		<json-logger:logger doc:name="JSON Logger Get All User Details Entry" doc:id="42fdb2fd-14a3-4ba2-969e-f4fd772f5b96" config-ref="jsonLoggerConfig" message="JSON Logger Get All User Details Entry"/>
+		<choice doc:name="Choice" doc:id="1963f211-dbaa-42cb-8f55-49e479065ff3" >
+			<when expression="#[!isEmpty(attributes.queryParams.trainTime) and !isEmpty(attributes.queryParams.sourceLocationCode) and !isEmpty(attributes.queryParams.destinationLocationCode)]">
+				<db:select doc:name="Select User Details By Time Stamp And Location" doc:id="cdad1191-4601-45bf-8a57-20623b15b2e6" config-ref="databaseConfig" >
+					<error-mapping targetType="US_SUB_SAPI:USER_DETAILS_BY_TIME_STAMP_LOCATION" />
+					<db:sql ><![CDATA[SELECT first_name,last_name,email_id,user_id,phone_number from USER WHERE user_id IN ((SELECT USER_ID FROM SUBSCRIPTION WHERE  (:trainTime BETWEEN FROM_TIME AND TO_TIME) and SOURCE_LOCATION = :sourceLocationCode and DESTINATION_LOCATION = :destinationLocationCode)) ]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	trainTime : attributes.queryParams.trainTime,
+	sourceLocationCode : attributes.queryParams.sourceLocationCode,
+	destinationLocationCode : attributes.queryParams.destinationLocationCode
+}]]]></db:input-parameters>
+				</db:select>
+				<validation:validate-size doc:name="Validate User Not Available In Database For The Train Time" doc:id="4b1e1bd8-c255-4c1d-8bc0-2222345cdd09" config-ref="validationConfig" value="#[payload]" min="1" message="User not available in database for the train time" />
+			</when>
+			<when expression="#[!isEmpty(attributes.queryParams.creationDate)]">
+				<db:select doc:name="Select User Details By Time Stamp" doc:id="25702552-a715-445a-a7c4-a46ca7f7f128" config-ref="databaseConfig">
+					<error-mapping targetType="US_SUB_SAPI:USER_DETAILS_BY_TIME_STAMP" />
+					<db:sql ><![CDATA[SELECT first_name,last_name,email_id,user_id,phone_number from USER  WHERE  CREATED_TIMESTAMP BETWEEN :START_DATE AND :END_DATE]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	START_DATE : attributes.queryParams.creationDate ++ " 00:00:01",
+	END_DATE : attributes.queryParams.creationDate ++ " 23:59:59",
+}]]]></db:input-parameters>
+				</db:select>
+			</when>
+			<otherwise>
+				<db:select doc:name="Select All User Details" doc:id="b69b26ba-9f55-4445-86be-9230bdbc1005" config-ref="databaseConfig">
+			<error-mapping targetType="US_SUB_SAPI:USER_DETAILS" />
+					<db:sql><![CDATA[select first_name,last_name,email_id,user_id,phone_number from USER]]></db:sql>
+		</db:select>
+				<validation:validate-size doc:name="Validate No Users Are Available In The Database" doc:id="d52eef5e-1d34-4dc0-848a-202d02e922e2" config-ref="validationConfig" value="#[payload]" min="1" message="No users are available in the database" />
+			</otherwise>
+		</choice>
+		<json-logger:logger doc:name="JSON Logger Before User Details" doc:id="4735debd-92e1-4406-b436-4d62fe151970" config-ref="jsonLoggerConfig" message="JSON Logger Before User Details" tracePoint="BEFORE_TRANSFORM" priority="TRACE"/>
+		<ee:transform doc:name="User Details To JSON" doc:id="0c2abc92-06c3-46fc-a90b-ec4984f05cfa">
+			<ee:message>
+				<ee:set-payload resource="dwl\user-details-to-json.dwl" />
+			
+</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Get All User Details Exit" doc:id="6c347953-b8f7-4fdb-aad3-217f4f458802" config-ref="jsonLoggerConfig" message="JSON Logger Get All User Details Exit" tracePoint="END"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="25e51b93-4018-4fe9-8151-6a3e6c60440f" when="#[error.description == 'No users are available in the database']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "404",
+  message: "No users are available in database"
+}]' doc:name="Set Payload To Indicate No Users Are Available In Database" doc:id="f066e6e5-c7f7-47ac-a536-9b6d7991037f" />
+				<set-variable value="404" doc:name='Set Http Status Code To "404 Not Found"' doc:id="4524ff59-fed8-4f3f-8513-d3175d65049e" variableName="httpStatus" />
+			</on-error-continue>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Contine" doc:id="e816e6f5-b1ea-416d-a433-c6beecd8e320" when="#[error.description == 'User not available in database for the train time']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "404",
+  message: "No users have subscribed to the train time provided"
+ }]' doc:name="Set Payload To Indicate No Users Are Available In Database" doc:id="d9419f5f-5ccb-4243-a6c2-f9fa17920627" />
+				<set-variable value="404" doc:name='Set Http Status Code To "404 Not Found"' doc:id="9962a473-c3f0-4efb-879e-698d8c0da82e" variableName="httpStatus" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="get-user-by-user-id" doc:id="131367b8-1916-4c96-86e0-88bee8e93034" >
+		<json-logger:logger doc:name="JSON Logger Get User By User Id Entry" doc:id="1ce5fab2-47e0-43db-b985-f62e5aa898f4" config-ref="jsonLoggerConfig" message="JSON Logger Get User By User Id Entry"/>
+		<db:select doc:name="Select Users by User Id" doc:id="36ca2261-9143-4fc5-bdc7-2efb97b015ff" config-ref="databaseConfig">
+			<db:sql><![CDATA[select first_name,last_name,email_id,user_id,phone_number from USER where user_id =:userId]]></db:sql>
+			<db:input-parameters><![CDATA[#[userId : attributes.uriParams.'userId']]]></db:input-parameters>
+		</db:select>
+		<validation:validate-size doc:name="Validate User Not Available In Database" doc:id="7fe06cb1-e2a1-4d3b-9e54-cd586e1efb7c" config-ref="validationConfig" min="1" message="User not available in database" value="#[payload]" />
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="719e7bd7-1991-405b-8ee8-926bd533f430" doc:name="User Id to JSON">
+            <ee:message>
+				<ee:set-payload resource="dwl\user-id-to-json.dwl" />
+            
+</ee:message>
+        </ee:transform>
+		<json-logger:logger doc:name="JSON Logger Get User By User Id Exit" doc:id="27217fe3-548d-4e9a-ad31-183fd60b2508" config-ref="jsonLoggerConfig" message="JSON Logger Get User By User Id Exit"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e6b9a066-6e21-4294-889d-d75957cb66ae" when="#[error.description == 'User not available in database']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "404",
+  message: "User not available in database for the supplied user id"
+ }]' doc:name="Set Payload To Indicate That User Has Not Been Found In Database" doc:id="502cd645-f86a-4c8c-8221-3eba400548db" />
+				<set-variable value="404" doc:name='Set Http Status Code To "404 Not Found"' doc:id="e78dc6a8-30d2-4b08-b628-d2005847dc65" variableName="httpStatus" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="add-user-details" doc:id="689f15fd-f064-4290-b3cc-93d5e030fe42" >
+		<json-logger:logger doc:name="JSON Logger Add User Details Entry" doc:id="ad353ee3-0651-4334-90c0-bcd33913b026" config-ref="jsonLoggerConfig" message="JSON Logger Add User Details Entry"/>
+		<db:insert doc:name="Insert User Details " doc:id="506dfd5a-296c-4149-88a6-694333ea9f5a" config-ref="databaseConfig" target="user">
+			<db:sql><![CDATA[insert into USER (user_id,email_id,first_name,last_name,phone_number,status_type_id) values(:userId,:email,:firstname,:secondname,:phone,1)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{email : payload.email,
+ firstname : payload.firstName,
+ secondname : payload.secondName,
+ phone : payload.phone,
+ userId :payload.userId
+}]]]></db:input-parameters>
+		</db:insert>
+		<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  rel: "self",
+  href: "../api/users/" ++ payload.userId
+ }]' doc:name="Set Payload To Send The Latest User Id" doc:id="224c13bb-b004-4d97-8aa1-76d659c91cd5" />
+		<json-logger:logger doc:name="JSON Logger Add User Details Exit" doc:id="9fd82fca-5d08-48e5-9120-7a4633f54d3d" config-ref="jsonLoggerConfig" message="JSON Logger Add User Details Exit"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ede14659-c534-49aa-ac4f-f3dac557292c" when="#[error.description contains('Duplicate')]" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "409",
+  message: "Email already registered,please try with different email address"
+ }]' doc:name="Set Payload To Indicate Email Already Exists" doc:id="3228304a-aa47-47e7-b2a7-3a6959bc703d" />
+				<set-variable value="409" doc:name='Set Http Status Code To "409 Conflict"' doc:id="afa7eb2e-27bf-4eb7-9e71-cd07a9fcf1fd" variableName="httpStatus" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+
+</mule>

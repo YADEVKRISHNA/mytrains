@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="arrival-details-flow" doc:id="f4de71a4-1441-4fc7-991b-3f0dd754c175" >
+		<json-logger:logger doc:name="JSON Logger Arrival Details Entry" doc:id="2dbccff4-b188-4900-82c1-3410a809c9c6" config-ref="jsonLoggerConfig" message="JSON Logger Arrival Details Entry" priority="TRACE" tracePoint="BEFORE_TRANSFORM"/>
+		<ee:transform doc:name="Get Arr Board Details Transform Input" doc:id="e605c591-cb36-4f1c-a401-da35a2bcc646" >
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://thalesgroup.com/RTTI/2017-10-01/ldb/
+---
+{
+	ns0#GetArrBoardWithDetailsRequest: {
+		ns0#numRows: 100,
+		ns0#crs: attributes.queryParams.sourceLocation,
+		ns0#filterCrs: attributes.queryParams.destinationLocation,
+		ns0#timeWindow: attributes.queryParams.timeWindowMins
+	}
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+                <ee:set-variable variableName="soapHeader" ><![CDATA[%dw 2.0 output application/xml
+ns ns0 http://thalesgroup.com/RTTI/2013-11-28/Token/types
+---
+headers : {
+    ns0#AccessToken: { ns0#TokenValue: p('secure::soap.accessToken')}
+}]]></ee:set-variable>
+            </ee:variables>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Before Consume SOAP" doc:id="c1607687-81dd-442f-919a-69d8c9062781" config-ref="jsonLoggerConfig" message="JSON Logger Before Consume SOAP" tracePoint="BEFORE_REQUEST" priority="TRACE"/>
+		<wsc:consume doc:name="GetArrBoardWithDetails" doc:id="a0654a8f-6c37-48a6-be54-d1a7d1169ffb" config-ref="webServiceConsumerConfig" operation="GetArrBoardWithDetails">
+			<wsc:message >
+				<wsc:headers ><![CDATA[#[vars.soapHeader]]]></wsc:headers>
+			</wsc:message>
+		</wsc:consume>
+		<json-logger:logger doc:name="JSON Logger After Consume SOAP" doc:id="93592fea-dbf9-4767-8cfa-fb61eccb9149" config-ref="jsonLoggerConfig" message="JSON Logger After Consume SOAP" tracePoint="AFTER_REQUEST" priority="TRACE"/>
+		<ee:transform doc:name="Get Arr Board Output Transform to JSON" doc:id="8dbbe999-e24e-4cc7-8639-a24ed2d829aa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://thalesgroup.com/RTTI/2017-10-01/ldb/
+---
+{arrivals : payload.body.ns0#GetArrBoardWithDetailsResponse.ns0#GetStationBoardResult}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Arrival Details Exit" doc:id="a7d0ed54-08d5-4320-9ba7-06cfc2d6beda" config-ref="jsonLoggerConfig" message="JSON Logger Arrival Details Exit" tracePoint="AFTER_TRANSFORM" priority="TRACE"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7924b113-74cf-4438-926b-03d7c8f550f6" type="WSC:CONNECTIVITY, WSC:RETRY_EXHAUSTED, WSC:TIMEOUT">
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "503",
+  message: "Unable to reach National Rail Soap API"
+ }]' doc:name="Set Payload" doc:id="a33625e9-4e0c-4cd6-9821-7f290e054307" />
+				<set-variable value="503" doc:name="Set Variable" doc:id="3b7bc204-e190-4fd7-8f4d-1eec9f045cbd" variableName="httpStatus"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d0710e25-9aa3-4f55-99c9-01d96d9da7c8" type="WSC:BAD_REQUEST, WSC:BAD_RESPONSE, WSC:CANNOT_DISPATCH, WSC:ENCODING, WSC:INVALID_WSDL, WSC:SOAP_FAULT">
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error received from National Rail SOAP API"
+ }]' doc:name="Set Payload" doc:id="e5191df7-49fc-4747-870c-78e92e3c6019" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6f181cab-734a-47bb-a824-422d159867dd" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error Occured while transforming data received from National Rail SOAP API"
+ }]' doc:name="Set Payload to transformation exception" doc:id="6a71c767-6955-47a4-b23a-f561a932e3b2" />
+			</on-error-propagate>
+		</error-handler>
+	
+</flow>	
+	
+	</mule>

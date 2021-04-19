@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="userSubscriptionSapiHttpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="userSubscriptionSapiConfig" 
+    	api="resource::3480247f-d37c-4331-9bae-dd5e280fb2be:user-subscription-sapi:1.0.0:raml:zip:user-subscription-sapi.raml" 
+    	outboundHeadersMapName="outboundHeaders" 
+    	httpStatusVarName="httpStatus" />
+	<validation:config name="validationConfig" doc:name="Validation Config" doc:id="6a867777-46c7-4a80-838f-023944c3cf46"/>    	    
+	<configuration-properties doc:name="Configuration properties" doc:id="6f7aa32d-1a1e-450c-8bbb-94cdae4220d4" file="config\user.subscription.sys.${muleEnv}.yaml" />
+	<configuration doc:name="Configuration" doc:id="499383e1-bacb-4c8a-bac7-6c445282ccd9" defaultErrorHandler-ref="GlobalError_Handler" />
+	<secure-properties:config name="securePropertiesConfig" doc:name="Secure Properties Config" doc:id="a02d7f38-f75a-4924-ae74-2bf751ae02f3" file="config\user.subscription.sys.${muleEnv}.yaml" key="secureKey" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<db:config name="databaseConfig" doc:name="Database Config" doc:id="8f4a578b-b310-4a3e-89e7-8bcf37491ed0" >
+		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.username}" password="${secure::database.password}" database="${database.schema}" />
+	</db:config>
+	<http:request-config name="httpRequestConfigurationServicenow" doc:name="HTTP Request configuration" doc:id="9072fd56-7e64-437d-924f-4acce90f513e"
+		responseTimeout="30000">
+		<http:request-connection host="incident-ticket-creation-api.us-e2.cloudhub.io" />
+	</http:request-config>
+		<http:request-config name="httpRequestConfigurationExceptionCategorization" doc:name="HTTP Request configuration" doc:id="dfd6669b-6e29-43a2-9020-3dd598f3f9c7"
+		responseTimeout="30000">
+		<http:request-connection host="njc-exception-categorization-sapi.us-e2.cloudhub.io" />
+	</http:request-config>
+	<global-property doc:name="Global Property" doc:id="db20da47-0ad1-4685-8a92-2794bf02fb6b" name="muleEnv" value="dev" />
+	<json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="f141ca4a-4505-45c9-aff6-d3b2afa96a4b" applicationName="user-subscription-sapi" applicationVersion="1.0.0-SNAPSHOT" environment="${muleEnv}" />
+	<error-handler name="GlobalError_Handler" doc:id="6b6904c9-8300-4c85-8c47-5bf6be220712" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="45821379-aae0-4058-af6e-a6c5581c5d4d" type="US_SUB_SAPI:USER_DETAILS_BY_TIME_STAMP_LOCATION, US_SUB_SAPI:USER_DETAILS_BY_TIME_STAMP, US_SUB_SAPI:USER_DETAILS, US_SUB_SAPI:ALRT_BY_SUB_ID, US_SUB_SAPI:INSERT_ALERT_BY_SUB_ID" >
+			<flow-ref doc:name="Invoke General Error Handling API" doc:id="9b1ea85b-ec36-4427-bb64-f555bbf88469" name="invoke-generic-error-handling-api"/>
+			<json-logger:logger doc:name="JSON Logger Before Transform Message" doc:id="8df489eb-bad7-4d93-b79c-7df3f408d17c" config-ref="jsonLoggerConfig" message="#[error.muleMessage.payload]" tracePoint="BEFORE_TRANSFORM" priority="TRACE"/>
+			<ee:transform doc:name="Error Code Transformation" doc:id="e77a5d29-445e-4154-be46-bb9064b9a996" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorCode": if(!isEmpty(error.muleMessage.payload))
+	 				error.muleMessage.payload.errorCode 
+	 			 else 
+	 			 	message.attributes.httpStatus,
+	"errorType": error.errorType.identifier as String ++ ":" ++ error.errorType.namespace as String,
+	"errorMessage": if(!isEmpty(error.muleMessage.payload) and
+					   !isEmpty(error.muleMessage.payload.errorCauses.*errorSummary)) 
+						error.muleMessage.payload.errorCauses.*errorSummary
+					else
+						error.detailedDescription
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="JSON Logger After Before Transform Message" doc:id="61360dd8-fc67-43f9-903d-babc86e19501" config-ref="jsonLoggerConfig" message="JSON Logger After Before Transform Message" tracePoint="AFTER_TRANSFORM" priority="TRACE"/>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="96080769-16a2-482d-8f38-9ddec012179f" type="ANY">
+			<flow-ref doc:name="Invoke General Error Handling API" doc:id="468e7f34-d74a-4aca-a796-98ca5f0a666c" name="invoke-generic-error-handling-api" />
+			<json-logger:logger doc:name="JSON Logger Before Transform Message" doc:id="86a51164-3539-4d87-892e-f434d598bf54" config-ref="jsonLoggerConfig" message="JSON Logger Before Transform Message" tracePoint="BEFORE_TRANSFORM" priority="TRACE" />
+			<ee:transform doc:name="Error Code Transformation" doc:id="64c76c49-e380-4594-8ed4-9580916689c5">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"errorCode": error.muleMessage.attributes.StatusCode,
+	"errorMessage": error.detailedDescription
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json-logger:logger doc:name="JSON Logger After Before Transform Message" doc:id="8a937ba5-a135-4497-8461-0e0ce64dadc1" config-ref="jsonLoggerConfig" message="JSON Logger After Before Transform Message" tracePoint="AFTER_TRANSFORM" priority="TRACE" />
+		</on-error-propagate>
+	</error-handler>
+		
+	<flow name="servicenow-incident-creation-flow" doc:id="a8ca595b-b7f6-4ecc-b48a-15f0dd66fbbf">
+		<choice doc:name="Choice" doc:id="3b1c6ee0-f18a-4c79-8e0b-e5e7c721e131">
+			<when
+				expression='#[["Redirection","Mule Expression Error","Client-Side Technical Error","Server-Side Technical Error","Invalid Error Code"] contains payload.errorDetails.errorCategory]'>
+				<json-logger:logger doc:name="JSON Logger Before Incident Request" doc:id="401d8e76-27b0-4464-982e-6f8b7f5b935f" config-ref="jsonLoggerConfig" tracePoint="BEFORE_REQUEST" priority="TRACE" message="JSON Logger Before Incident Request"/>
+				<http:request method="POST" doc:name="Request To Incident Ticket SAPI" doc:id="44b55f30-4605-4d62-9b8f-2a941a796412" config-ref="httpRequestConfigurationServicenow" path="/api/incidents"
+					outputMimeType="application/json" responseTimeout="30000">
+					<http:body><![CDATA[#[vars.errorPayload]]]></http:body>
+				</http:request>
+				<json-logger:logger doc:name="JSON Logger After the Request" doc:id="732cb7b1-4057-499e-9006-b95f5ea5272d" config-ref="jsonLoggerConfig" message="JSON Logger After the Request" tracePoint="AFTER_REQUEST" priority="TRACE"/>
+				<ee:transform doc:name="Transform Message" doc:id="be01d95c-4288-461f-bef9-b60bbd87475e">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<json-logger:logger doc:name="JSON Logger After Incident Request" doc:id="f2f1a0cc-7587-4dae-a2f8-7e976cd56889" config-ref="jsonLoggerConfig" message="JSON Logger After Incident Request" tracePoint="END"/>
+			</when>
+		</choice>
+	</flow>	
+	
+		<sub-flow name="invoke-generic-error-handling-api" doc:id="89138389-2d4d-4528-bb1d-49311a8d99be">
+		<json-logger:logger doc:name="JSON Logger Entry for Error Invoke" doc:id="39116279-79f0-4158-a4bd-d1d4e1d98a1d" config-ref="jsonLoggerConfig" message="JSON Logger Entry for Error Invoke"/>
+		<ee:transform doc:name="Transform Error Object To JSON" doc:id="3b15a85c-8a04-4aef-a56e-8cec88966db6">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set Error Payload" doc:id="f0493277-11a6-47bd-b56b-0a52693e0abd" variableName="errorPayload" />
+		<http:request method="POST" doc:name="Request To Error API" doc:id="2809417b-77ab-4a49-a51a-9b434aa553d5"
+			config-ref="httpRequestConfigurationExceptionCategorization" path="/errors/submit" outputMimeType="application/json" />
+		<json-logger:logger doc:name="JSON Logger Exit for Error Invoke" doc:id="3633d2af-e03f-444a-be0c-b590ea37b1fa" config-ref="jsonLoggerConfig" message="JSON Logger Exit for Error Invoke" tracePoint="END"/>
+		<!-- <flow-ref doc:name="Call to ServiceNow" doc:id="db910199-dd64-4911-a8c8-83e7524d931c" name="servicenow-incident-creation-flow" /> -->
+	</sub-flow>
+</mule>

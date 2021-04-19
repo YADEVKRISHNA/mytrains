@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+    <!--
+    The including Mule app MUST:
+    - include <import file="health-common.xml" doc:name="Import health-common.xml" />
+    - define <sub-flow name="check-all-dependencies-are-alive" />, which will typically invoke check-dependency-is-alive defined here
+    - define <http:listener-config name="apiHttpListenerConfig" />
+    - define these properties: app.name, app.version, env, api.rootPath
+
+    The including Mule app MAY optionally:
+    - override property deps.alive.timeoutMillis (default 1000)
+    - override property deps.alive.maxRetries (default 2)
+    - override property deps.alive.millisBetweenRetries (default 1000)
+    -->
+    <global-property name="deps.alive.timeoutMillis" value="1000" doc:name="Default deps.alive.timeoutMillis"/>
+    <global-property name="deps.alive.maxRetries" value="2" doc:name="Default deps.alive.maxRetries"/>
+    <global-property name="deps.alive.millisBetweenRetries" value="1000" doc:name="Default deps.alive.millisBetweenRetries"/>
+    <json-logger:config name="healthJLogConf" applicationName="${app.name}" applicationVersion="${app.version}" environment="${env}" logLocationInfo="false" disabledFields="content" prettyPrint="false" doc:name="JSON Logger Config"/>
+    <flow name="api-alive">
+        <http:listener config-ref="apiHttpListenerConfig" path="${api.rootPath}/alive">
+            <http:response statusCode="200"/>
+            <http:error-response statusCode="500">
+                <http:body>DOWN</http:body>
+            </http:error-response>
+        </http:listener>
+        <set-payload value="UP" doc:name="UP"/>
+    </flow>
+    <flow name="api-ready">
+        <http:listener config-ref="apiHttpListenerConfig" path="${api.rootPath}/ready">
+            <http:response statusCode="200"/>
+            <http:error-response statusCode="500">
+                <http:body>DOWN</http:body>
+            </http:error-response>
+        </http:listener>
+        <flow-ref name="check-all-dependencies-are-alive" doc:name="check-all-dependencies-are-alive"/>
+        <set-payload value="UP" doc:name="UP"/>
+    </flow>
+    <flow name="check-dependency-is-alive">
+        <until-successful maxRetries="${deps.alive.maxRetries}" millisBetweenRetries="${deps.alive.millisBetweenRetries}" doc:name="Until Successful">
+            <http:request method="GET" url="#[vars.livenessEndpoint]" followRedirects="true" responseTimeout="${deps.alive.timeoutMillis}" doc:name="HTTP GET to dependency">
+                <http:response-validator>
+                    <http:success-status-code-validator values="200..299"/>
+                </http:response-validator>
+            </http:request>
+        </until-successful>
+        <json-logger:logger message="#['Dependency at $(vars.livenessEndpoint) is alive']" priority="DEBUG" tracePoint="AFTER_REQUEST" config-ref="healthJLogConf" doc:name="FLOW"/>
+        <error-handler>
+            <on-error-propagate enableNotifications="false" logException="false">
+                <json-logger:logger message="#['Dependency at $(vars.livenessEndpoint) is NOT alive']" priority="WARN" tracePoint="EXCEPTION" config-ref="healthJLogConf" doc:name="EXCEPTION"/>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+</mule>

@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.njclabs</groupId>
+  <artifactId>solutions-bom</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>solutions-bom</name>
+  <!-- IMPORTANT: Due to a bug in MUnit, this file must be installed into the local Maven repo after every change: mvn -f bom.xml install:install-file -Dpackaging=pom -Dfile=bom.xml -DpomFile=bom.xml -->
+
+  <parent>
+    <groupId>com.njclabs</groupId>
+    <artifactId>common-bom</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>./common.xml</relativePath>
+  </parent>
+
+  <organization>
+    <name>NJC Labs Limited</name>
+    <url>https://njclabs.com</url>
+  </organization>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!-- generic Maven-related versions -->
+    <maven.min.version>3.5.4</maven.min.version>
+
+    <!-- required by some Maven plugins -->
+    <maven.max.version>4.0.0</maven.max.version>
+    <resources.plugin.version>3.1.0</resources.plugin.version>
+    <versions.plugin.version>2.7</versions.plugin.version>
+    <enforcer.plugin.version>3.0.0-M3</enforcer.plugin.version>
+    <license.plugin.version>2.0.0</license.plugin.version>
+    <xml.format.plugin.version>3.1.1</xml.format.plugin.version>
+
+    <!-- Mule-related versions -->
+    <app.runtime.semver>4.3.0</app.runtime.semver>
+    <app.runtime>${app.runtime.semver}</app.runtime>
+    <mule.maven.plugin.version>3.3.6</mule.maven.plugin.version>
+
+    <munit.version>2.2.5</munit.version>
+    <apikit.version>1.3.11</apikit.version>
+    <soapkit.version>1.2.5</soapkit.version>
+    <secure.conf.prop.module.version>1.2.0</secure.conf.prop.module.version>
+    <validation.module.version>1.4.0</validation.module.version>
+    <json.module.version>2.1.2</json.module.version>
+    <xml.module.version>1.2.2</xml.module.version>
+    <oauth.module.version>1.1.12</oauth.module.version>
+    <munit.dbserver.module.version>2.0.2</munit.dbserver.module.version>
+    <http.connector.version>1.5.12</http.connector.version>
+    <sockets.connector.version>1.1.5</sockets.connector.version>
+    <db.connector.version>1.6.2</db.connector.version>
+    <objectstore.connector.version>1.1.3</objectstore.connector.version>
+    <wsc.connector.version>1.5.3</wsc.connector.version>
+    <vm.connector.version>2.0.0</vm.connector.version>
+    <anypoint.mq.connector.version>2.1.0</anypoint.mq.connector.version>
+    <sftp.connector.version>1.3.4</sftp.connector.version>
+    <file.connector.version>1.3.2</file.connector.version>
+    <email.connector.version>1.1.10</email.connector.version>
+    <json.logger.version>1.1.0-rc1</json.logger.version>
+
+    <!-- 3rd party lib versions -->
+    <postgresql.version>42.2.9</postgresql.version>
+    <h2.version>1.4.200</h2.version>
+
+
+
+    <!-- simple jars -->
+    <apps-commons.version>1.0.0-SNAPSHOT</apps-commons.version>
+
+    <!-- Mule runtime domains -->
+    <system-domain.version>1.0.0-SNAPSHOT</system-domain.version>
+
+    <!-- raw info for all API specifications that any Mule app depends on: -->
+    <template-api.groupId>${aa.ap.orgid}</template-api.groupId>
+    <template-api.artifactId>template-api</template-api.artifactId>
+    <template-api.version>1.0.3</template-api.version>
+
+    <!-- SAPIs -->
+	<user-identity-mgmt-sapi.groupId>${aa.ap.orgid}</user-identity-mgmt-sapi.groupId>
+	<user-identity-mgmt-sapi.artifactId>user-identity-mgmt-sapi</user-identity-mgmt-sapi.artifactId>
+	<user-identity-mgmt-sapi.version>1.0.0</user-identity-mgmt-sapi.version>
+
+	<user-subscription-sapi.groupId>${aa.ap.orgid}</user-subscription-sapi.groupId>
+	<user-subscription-sapi.artifactId>user-subscription-sapi</user-subscription-sapi.artifactId>
+	<user-subscription-sapi.version>1.0.0</user-subscription-sapi.version>
+
+	<incident-ticket-creation-sapi.groupId>${aa.ap.orgid}</incident-ticket-creation-sapi.groupId>
+	<incident-ticket-creation-sapi.artifactId>incident-ticket-creation-sapi</incident-ticket-creation-sapi.artifactId>
+	<incident-ticket-creation-sapi.version>1.0.0</incident-ticket-creation-sapi.version>
+
+	<exception-categorization-sapi.groupId>${aa.ap.orgid}</exception-categorization-sapi.groupId>
+	<exception-categorization-sapi.artifactId>exception-categorization-sapi</exception-categorization-sapi.artifactId>
+	<exception-categorization-sapi-sapi.version>1.0.0</exception-categorization-sapi-sapi.version>
+	
+	<national-rail-sapi.groupId>${aa.ap.orgid}</national-rail-sapi.groupId>
+	<national-rail-sapi.artifactId>national-rail-sapi</national-rail-sapi.artifactId>
+	<national-rail-sapi.version>1.0.0</national-rail-sapi.version>
+
+	<!-- PAPIs -->
+	<alert-notification-papi.groupId>${aa.ap.orgid}</alert-notification-papi.groupId>
+	<alert-notification-papi.artifactId>alert-notification-papi</alert-notification-papi.artifactId>
+	<alert-notification-papi.version>1.0.0</alert-notification-papi.version>
+
+	<!-- EAPIs -->
+
+	<user-subscription-eapi.groupId>${aa.ap.orgid}</user-subscription-eapi.groupId>
+	<user-subscription-eapi.artifactId>user-subscription-eapi</user-subscription-eapi.artifactId>
+	<user-subscription-eapi.version>1.0.0</user-subscription-eapi.version>
+	
+    <!-- 
+    <aggregator-quote-creation-eapi.groupId>${aa.ap.orgid}</aggregator-quote-creation-eapi.groupId>
+    <aggregator-quote-creation-eapi.artifactId>aggregator-quote-creation-eapi</aggregator-quote-creation-eapi.artifactId>
+    <aggregator-quote-creation-eapi.version>1.0.3</aggregator-quote-creation-eapi.version> -->
+
+    <!-- PAPIs -->
+    <!-- <policy-holder-search-papi.groupId>${aa.ap.orgid}</policy-holder-search-papi.groupId>
+    <policy-holder-search-papi.artifactId>policy-holder-search-papi</policy-holder-search-papi.artifactId>
+    <policy-holder-search-papi.version>1.1.0</policy-holder-search-papi.version>
+
+    <check-in-papi.groupId>${aa.ap.orgid}</check-in-papi.groupId>
+    <check-in-papi.artifactId>check-in-papi</check-in-papi.artifactId>
+    <check-in-papi.version>1.1.0</check-in-papi.version>
+
+
+    <check-in-papi.groupId>${aa.ap.orgid}</check-in-papi.groupId>
+    <check-in-papi.artifactId>check-in-papi</check-in-papi.artifactId>
+    <check-in-papi.version>1.1.0</check-in-papi.version> -->
+
+    <!-- SAPIs -->
+    <!-- <flights-management-sapi.groupId>${aa.ap.orgid}</flights-management-sapi.groupId>
+    <flights-management-sapi.artifactId>flights-management-sapi</flights-management-sapi.artifactId>
+    <flights-management-sapi.version>1.1.2</flights-management-sapi.version>
+
+    <passenger-data-sapi.groupId>${aa.ap.orgid}</passenger-data-sapi.groupId>
+    <passenger-data-sapi.artifactId>passenger-data-sapi</passenger-data-sapi.artifactId>
+    <passenger-data-sapi.version>1.1.2</passenger-data-sapi.version>
+
+    <paypal-sapi.groupId>${aa.ap.orgid}</paypal-sapi.groupId>
+    <paypal-sapi.artifactId>paypal-sapi</paypal-sapi.artifactId>
+    <paypal-sapi.version>1.2.0</paypal-sapi.version> -->
+  </properties>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Mule-related Maven plugins -->
+        <plugin>
+          <groupId>org.mule.tools.maven</groupId>
+          <artifactId>mule-maven-plugin</artifactId>
+          <version>${mule.maven.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.mulesoft.munit.tools</groupId>
+          <artifactId>munit-maven-plugin</artifactId>
+          <version>${munit.version}</version>
+        </plugin>
+        <!-- generic Maven plugins -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${resources.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>${license.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>${versions.plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${enforcer.plugin.version}</version>
+          <configuration>
+            <rules>
+              <requireMavenVersion>
+                <version>[${maven.min.version},${maven.max.version})</version>
+              </requireMavenVersion>
+            </rules>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>au.com.acegi</groupId>
+          <artifactId>xml-format-maven-plugin</artifactId>
+          <version>${xml.format.plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+  <!-- declare the version (not the dependency itself!) of each dependency of each Mule app: -->
+  <dependencyManagement>
+    <dependencies>
+      <!-- standard Mule plugins: Mule runtime modules -->
+      <dependency>
+        <groupId>com.mulesoft.mule.runtime.modules</groupId>
+        <artifactId>mule-module-batch-ee</artifactId>
+        <version>${app.runtime.semver}</version>
+        <!-- with Mule pre-releases this may be needed: <version>${app.runtime}</version> -->
+        <scope>provided</scope>
+      </dependency>
+      <!-- standard Mule plugins: MUnit -->
+      <dependency>
+        <groupId>com.mulesoft.munit</groupId>
+        <artifactId>munit-runner</artifactId>
+        <version>${munit.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.mulesoft.munit</groupId>
+        <artifactId>munit-tools</artifactId>
+        <version>${munit.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <!-- standard Mule plugins: modules -->
+      <dependency>
+        <groupId>org.mule.modules</groupId>
+        <artifactId>mule-apikit-module</artifactId>
+        <version>${apikit.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.modules</groupId>
+        <artifactId>mule-soapkit-module</artifactId>
+        <version>${soapkit.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.mulesoft.modules</groupId>
+        <artifactId>mule-secure-configuration-property-module</artifactId>
+        <version>${secure.conf.prop.module.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.modules</groupId>
+        <artifactId>mule-validation-module</artifactId>
+        <version>${validation.module.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.modules</groupId>
+        <artifactId>mule-json-module</artifactId>
+        <version>${json.module.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.modules</groupId>
+        <artifactId>mule-xml-module</artifactId>
+        <version>${xml.module.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.modules</groupId>
+        <artifactId>mule-oauth-module</artifactId>
+        <version>${oauth.module.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.mulesoft.munit.utils</groupId>
+        <artifactId>munit-dbserver-module</artifactId>
+        <version>${munit.dbserver.module.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <!-- standard Mule plugins: connectors -->
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-http-connector</artifactId>
+        <version>${http.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-sockets-connector</artifactId>
+        <version>${sockets.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-db-connector</artifactId>
+        <version>${db.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-objectstore-connector</artifactId>
+        <version>${objectstore.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-wsc-connector</artifactId>
+        <version>${wsc.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-vm-connector</artifactId>
+        <version>${vm.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.mulesoft.connectors</groupId>
+        <artifactId>anypoint-mq-connector</artifactId>
+        <version>${anypoint.mq.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-sftp-connector</artifactId>
+        <version>${sftp.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-file-connector</artifactId>
+        <version>${file.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.mule.connectors</groupId>
+        <artifactId>mule-email-connector</artifactId>
+        <version>${email.connector.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <!-- other MuleSoft dependencies -->
+      <dependency>
+        <groupId>${aa.ap.orgid}</groupId>
+        <artifactId>json-logger</artifactId>
+        <version>${json.logger.version}</version>
+        <classifier>mule-plugin</classifier>
+      </dependency>
+      <!-- 3rd party libs -->
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${postgresql.version}</version>
+      </dependency>
+      <dependency>
+        <!-- H2 DB For Munit DB tests -->
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>${h2.version}</version>
+      </dependency>
+
+      <!-- API specifications and corresponding REST connectors -->
+      <dependency>
+        <groupId>${template-api.groupId}</groupId>
+        <artifactId>${template-api.artifactId}</artifactId>
+        <version>${template-api.version}</version>
+        <classifier>raml</classifier>
+        <type>zip</type>
+      </dependency>
+      <!-- EAPIs -->
+
+    </dependencies>
+  </dependencyManagement>
+  <repositories>
+    <repository>
+      <!-- MuleSoft repository for publicly accessible artifacts, does not require authentication -->
+      <id>mulesoft-releases</id>
+      <name>MuleSoft Releases Repository</name>
+      <url>https://repository.mulesoft.org/releases/</url>
+    </repository>
+    <repository>
+      <!-- MuleSoft repository for artifacts related to Mule runtime EE, requires authentication -->
+      <!-- required for SOAPKit at least -->
+      <id>releases-ee</id>
+      <name>Mule Release Repository</name>
+      <url>https://repository.mulesoft.org/nexus/content/repositories/releases-ee/</url>
+    </repository>
+    <repository>
+      <!-- Anypoint Exchange repository of the MuleSoft Services Anypoint Platform organization, requires authentication -->
+      <id>${mssvcs.exchange.repo.id}</id>
+      <name>MuleSoft Services Anypoint Exchange</name>
+      <url>https://maven.anypoint.mulesoft.com/api/v2/maven</url>
+    </repository>
+    <repository>
+      <!-- Anypoint Exchange repository of the AnyAirline Anypoint Platform organization, requires authentication -->
+      <id>${aa.exchange.repo.id}</id>
+      <name>AnyAirline Anypoint Exchange</name>
+      <url>https://maven.anypoint.mulesoft.com/api/v2/maven</url>
+    </repository>
+    <repository>
+      <!-- default Anypoint Exchange repository: the username used for authentication determines which Anypoint Platform organization this belongs 
+        to -->
+      <!-- dangerous and therefore not required for the final solution, just for walkthroughs -->
+      <id>anypoint-exchange-v2</id>
+      <name>Anypoint Exchange</name>
+      <url>https://maven.anypoint.mulesoft.com/api/v2/maven</url>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>mulesoft-releases</id>
+      <name>MuleSoft Releases Repository</name>
+      <url>https://repository.mulesoft.org/releases/</url>
+    </pluginRepository>
+    <pluginRepository>
+      <!-- required by MUnit Maven plugin even just for MUnit-testing with the EE runtime -->
+      <id>releases-ee</id>
+      <name>Mule Release Repository</name>
+      <url>https://repository.mulesoft.org/nexus/content/repositories/releases-ee/</url>
+    </pluginRepository>
+  </pluginRepositories>
+</project>

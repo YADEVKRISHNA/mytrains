@@ -1,0 +1,22 @@
+jms:
+  server: "64.227.37.97"
+  url: "tcp://64.227.37.97:61616"
+  username: "admin"
+  password: "admin"
+  topicDestination: "loggerTopic"
+  queueDestination: "loggerQueue"
+
+servicenow:  
+  wsdl: "https://dev85242.service-now.com/incident.do?WSDL"
+  service: "ServiceNow_incident"
+  port: "ServiceNowSoap"
+  address: "https://dev85242.service-now.com/incident.do?SOAP"
+  username: "admin"
+  password: "Anika@12345"
+  actor: "http://schemas.xmlsoap.org/soap/actor/next"
+  
+http:
+  loggerPort: "8086"
+  
+exceptionRequest:
+  host: "njc-exception-categorization-sapi.us-e2.cloudhub.io"

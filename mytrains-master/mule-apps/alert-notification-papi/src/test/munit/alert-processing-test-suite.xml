@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="alert-processing-test-suite.xml" />
+	<munit:test name="alert-processing-test-suite-alert-processing-flowTest" doc:id="f4e49dd0-8d2e-44cc-a1d0-472bc21b53fc" description="Test">
+		<munit:behavior >
+			<munit:set-event doc:name="Set Event" doc:id="bab75eb5-e3e9-4da4-ad80-f62030425c3e" >
+				<munit:payload value='[
+  {
+    "delays": {
+      "source": "BSK",
+      "destination": "WAT",
+      "standardTime": "10:34:00",
+      "estimatedTime": "Cancelled",
+      "delayType": "CANCELLED",
+      "delayMins": "120"
+    }
+  },
+  {
+    "delays": {
+      "source": "BSK",
+      "destination": "WAT",
+      "standardTime": "11:03:00",
+      "estimatedTime": "Delayed",
+      "delayType": "DELAYED",
+        "delayMins": "120"
+    }
+  },
+  {
+    "delays": {
+      "source": "BSK",
+      "destination": "WAT",
+      "standardTime": "11:34:00",
+      "estimatedTime": "11:39",
+      "delayType": "DELAYED",
+         "delayMins": "5"
+    }
+  }
+]' encoding="UTF-8" mediaType="application/json" />
+			</munit:set-event>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to alert-processing-flow" doc:id="3dae37eb-566c-42a8-adfa-86918cbe05e9" name="alert-processing-flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call" doc:id="0d3b2dce-d359-4f3b-ae66-a79a2520efcb" processor="email:send" times="#[3]">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Send Email to the users notifying the delay" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+
+</mule>

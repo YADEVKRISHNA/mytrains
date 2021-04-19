@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	
+	<flow name="publish-logs-to-jms-topic-flow" doc:id="d4af85b5-6182-4973-b41b-cab98b5bcf68" initialState="started">
+		<json-logger:logger doc:name="Payload" doc:id="42493741-fd33-4a22-a56f-c9e4964705d3" config-ref="jsonLoggerConfig" message="payload"/>
+		<jms:publish doc:id="ed38690a-ff6e-453b-a1cf-b4f2ac3521e7" doc:name="Publish to JMS  loggerTopic" config-ref="jmsConfig" destination="${jms.topicDestination}" sendCorrelationId="ALWAYS" destinationType="TOPIC"/>
+		<json-logger:logger doc:name="Payload" doc:id="01ef6d6f-853e-4a22-b5a4-38f2bee919a8" message="payload" config-ref="jsonLoggerConfig" tracePoint="AFTER_REQUEST"/>
+		<flow-ref doc:name="Get Logs From Jms Topic Flow" doc:id="16794955-b887-4535-8cd1-b8d3daca9130" name="get-logs-from-jms-topic-flow"/>
+	
+</flow>
+
+
+	<flow name="get-logs-from-jms-topic-flow" doc:id="5df04891-a981-468e-b014-6fded57a1055" >
+		<jms:listener doc:name="from loggerTopic" doc:id="07b46954-a1c6-4122-9f20-de95e54badfe" config-ref="jmsConfig" destination="${jms.queueDestination}" numberOfConsumers="1" ackMode="AUTO">
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<flow-ref doc:name="to Servicenow" doc:id="f4781b88-4e38-4998-979a-63d55f902e19" name="servicenow"/>
+	</flow>
+</mule>
+	

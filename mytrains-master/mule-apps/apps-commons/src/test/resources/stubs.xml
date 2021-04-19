@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:http="http://www.mulesoft.org/schema/mule/http" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+    <!-- to be defined in including Mule app: -->
+    <!-- for health-common: -->
+    <http:listener-config name="apiHttpListenerConfig">
+        <http:listener-connection host="0.0.0.0" protocol="HTTP" port="8081"/>
+    </http:listener-config>
+    <sub-flow name="check-all-dependencies-are-alive">
+        <set-variable variableName="livenessEndpoint" value="${TODO.alive}" doc:name="livenessEndpoint=TODO"/>
+        <flow-ref name="check-dependency-is-alive" doc:name="check-dependency-is-alive or error"/>
+    </sub-flow>
+</mule>

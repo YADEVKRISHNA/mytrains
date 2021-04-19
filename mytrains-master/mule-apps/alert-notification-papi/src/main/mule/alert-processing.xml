@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:user-subscription-system-api="http://www.mulesoft.org/schema/mule/user-subscription-system-api" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/user-subscription-system-api http://www.mulesoft.org/schema/mule/user-subscription-system-api/current/mule-user-subscription-system-api.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="alert-processing-flow" doc:id="c3722f87-4c8d-4154-8a3f-1d8358cc1801" >
+		<vm:listener doc:name="Listener" doc:id="8461cabe-f761-497c-8da0-35852598835a" config-ref="alertNotificationPapiVmConfig" queueName="delayedTrain"/>
+		<foreach doc:name="For each alert retrieve the users who need to be notified" doc:id="c9311a1c-1230-4d32-9448-2d168fbab1d0" >
+			<json-logger:logger doc:name="JSON Logger Alert Processing Flow Entry" doc:id="4f928c20-196c-40f0-a11d-f1267a5d56c3" config-ref="jsonLoggerConfig" message="JSON Logger Alert Processing Flow Entry"/>
+			<user-subscription-system-api:get-users doc:name="Retrieve Qualifying Users For Each Alert And Store Them In User Variable" doc:id="c26d5a22-fbab-43e0-a856-ebbd2f4ad734" config-ref="userSubscriptionSystemApiConfig" train-time="#[payload.delays.standardTime]" source-location-code="#[payload.delays.source]" destination-location-code="#[payload.delays.destination]" target="user" />
+			<ee:transform doc:name="Extract Delay Details" doc:id="5716f680-4199-450f-b697-a48b854d882b" >
+				<ee:message />
+				<ee:variables >
+					<ee:set-variable variableName="delayType" ><![CDATA[payload.delays.delayType]]></ee:set-variable>
+					<ee:set-variable variableName="sourceLocation" ><![CDATA[payload.delays.source]]></ee:set-variable>
+					<ee:set-variable variableName="destinationLocation" ><![CDATA[payload.delays.destination]]></ee:set-variable>
+					<ee:set-variable variableName="estimatedTime" ><![CDATA[payload.delays.estimatedTime]]></ee:set-variable>
+					<ee:set-variable variableName="standardTime" ><![CDATA[payload.delays.standardTime]]></ee:set-variable>
+					<ee:set-variable variableName="delayTime" ><![CDATA[payload.delays.delayMins]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<foreach doc:name="For Each User Send An Email To Inform Them That Their Train Has Been Delayed" doc:id="da525967-ff1a-423d-97d6-61cff451aabf" collection="vars.user" >
+				<user-subscription-system-api:get-subscriptions-by-user-id doc:name="Get Subscriptions By User Id" doc:id="708cb341-e4d0-4398-97c8-e1929859d590" config-ref="userSubscriptionSystemApiConfig" user-id="#[vars.user[0].userId]" train-time="#[vars.standardTime]" source-location-code="#[vars.sourceLocation]" destination-location-code="#[vars.destinationLocation]" />
+				<ee:transform doc:name="Create Alert Data" doc:id="add74422-a2c3-442c-b300-fe1412d197d0" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="alert" ><![CDATA[%dw 2.0
+output application/json
+
+
+---
+{
+	subscriptionId : payload[0].subscriptionId as Number,
+	delayType : vars.delayType,
+	delayMins : vars.delayTime	
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<user-subscription-system-api:create-alert-by-user-id-subscription-id doc:name="Create Alert By User Id Subscription Id" doc:id="62bdb91a-1e1e-4b78-b3d9-714f31748c0f" config-ref="userSubscriptionSystemApiConfig" user-id="#[vars.user[0].userId]" subscription-id="#[payload[0].subscriptionId]" target="alert">
+					<user-subscription-system-api:create-alert-by-user-id-subscription-id-request-data ><![CDATA[#[vars.alert]]]></user-subscription-system-api:create-alert-by-user-id-subscription-id-request-data>
+				</user-subscription-system-api:create-alert-by-user-id-subscription-id>
+				<parse-template doc:name="Parse Template To Replace The Content Of The Template With User And Delay Details" doc:id="be99830f-8da8-4351-b653-ad438818d362" location="body.html" target="mailBody" />
+				<email:send doc:name="Send Email To The Users Notifying The Delay" doc:id="9fb72a36-cc87-4575-a77d-e19ba1204859" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Delay Notification">
+					<email:to-addresses >
+						<email:to-address value="#[vars.user[0].email as String]" />
+					</email:to-addresses>
+					<email:body contentType="text/html" >
+						<email:content ><![CDATA[#[vars.mailBody]]]></email:content>
+					</email:body>
+				</email:send>
+				<json-logger:logger doc:name="JSON Logger Alert Processing Flow Exit" doc:id="76c70a44-0b9c-4fd0-9aa7-d14dfa47ab2f" config-ref="jsonLoggerConfig" message="JSON Logger Alert Processing Flow Exit"/>
+			</foreach>
+		</foreach>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="1b51f2f0-8198-4975-89bf-5d755d9e72e2" type="USER-SUBSCRIPTION-SYSTEM-API:BAD_REQUEST, USER-SUBSCRIPTION-SYSTEM-API:CONNECTIVITY, USER-SUBSCRIPTION-SYSTEM-API:FORBIDDEN, USER-SUBSCRIPTION-SYSTEM-API:INTERNAL_SERVER_ERROR, USER-SUBSCRIPTION-SYSTEM-API:METHOD_NOT_ALLOWED, USER-SUBSCRIPTION-SYSTEM-API:NOT_ACCEPTABLE, USER-SUBSCRIPTION-SYSTEM-API:NOT_FOUND, USER-SUBSCRIPTION-SYSTEM-API:PARSING, USER-SUBSCRIPTION-SYSTEM-API:RETRY_EXHAUSTED, USER-SUBSCRIPTION-SYSTEM-API:SECURITY, USER-SUBSCRIPTION-SYSTEM-API:SERVICE_UNAVAILABLE, USER-SUBSCRIPTION-SYSTEM-API:TIMEOUT, USER-SUBSCRIPTION-SYSTEM-API:TOO_MANY_REQUESTS, USER-SUBSCRIPTION-SYSTEM-API:UNAUTHORIZED, USER-SUBSCRIPTION-SYSTEM-API:UNSUPPORTED_MEDIA_TYPE">
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="cebc4aa1-152d-4691-8989-6a32c6fdeca1" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while processing alerts for National Rail Customer" >
+					<email:to-addresses >
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" >
+					</email:body>
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+payload]' doc:name="Payload To Exception While Invoking User Subscription System API" doc:id="7b1eee46-d390-4e7b-b21a-6348dde01f66" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a2a86398-7cec-430f-969c-cf23ce3292a4" type="EMAIL:CONNECTIVITY, EMAIL:RETRY_EXHAUSTED, EMAIL:SEND" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error Occured while sending email to the customer about the alerts"
+ }]' doc:name="Payload To Transformation Exception" doc:id="09705ef8-3013-4fc7-b972-dedf87d311ae" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="Error Propagate" doc:id="4cb98384-251b-4466-bac7-1e58c383976d" type="ANY" >
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="f6779cd6-30dd-492b-a11b-33c40d20f33a" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while processing alerts for National Rail Customer">
+					<email:to-addresses>
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error Occured while transforming data received from Subscription/Rail System API"
+ }]' doc:name="Set Payload To Transformation Exception" doc:id="03ec86cf-6dcd-49dc-8266-a30833448b41" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

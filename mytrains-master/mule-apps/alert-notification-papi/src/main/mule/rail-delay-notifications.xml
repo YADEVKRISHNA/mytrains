@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:national-rail-sapi="http://www.mulesoft.org/schema/mule/national-rail-sapi"
+	xmlns:user-subscription-system-api="http://www.mulesoft.org/schema/mule/user-subscription-system-api" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/user-subscription-system-api http://www.mulesoft.org/schema/mule/user-subscription-system-api/current/mule-user-subscription-system-api.xsd
+http://www.mulesoft.org/schema/mule/national-rail-sapi http://www.mulesoft.org/schema/mule/national-rail-sapi/current/mule-national-rail-sapi.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+	<flow name="rail-delay-notifications" doc:id="02b05225-fe62-4814-b1c5-780dde147a1f" >
+		<scheduler doc:name="Scheduler" doc:id="833bc6ee-39ff-4923-89a9-77b69bc517aa" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="15" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<json-logger:logger doc:name="JSON Logger Rail Delay Notifications Entry" doc:id="6f78ca19-9027-4e5e-9be5-aee278b47ee8" config-ref="jsonLoggerConfig" message="JSON Logger Rail Delay Notifications Entry"/>
+		<user-subscription-system-api:get-locations doc:name="Get Locations" doc:id="6d16b45c-64d9-42fd-a28a-32641b0ce72a" config-ref="userSubscriptionSystemApiConfig" notification-range-mins="${subscription.advanceNotificationMins}"/>
+		<choice doc:name="Check If There Are Any Qualifying Subscriptions For The Current Time" doc:id="401e7e9a-1a21-4882-a468-5dd540bd633a" >
+			<when expression='#[!isEmpty(payload)]'>
+				<foreach doc:name="For Each" doc:id="1ec97c9d-07ba-4f41-8465-9b3163b725bd">
+			<national-rail-sapi:get-arrivals doc:name="Get Arrivals" doc:id="1aaa4e2a-ae02-4ba9-8fdc-db564e3003f5" source-location="#[payload.sourceLocationCode]" destination-location="#[payload.destinationLocationCode]" time-window-mins="#[payload.advanceNotificationMins]" config-ref="nationalRailSapiConfig" target="arrivals" />
+			<ee:transform doc:name="Delayed Train Service Transformation" doc:id="1652da1d-d3ec-411f-b5d9-87fd3f278e66">
+				<ee:message>
+							<ee:set-payload resource="dwl\delayed-train-service.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="sourceLocation"><![CDATA[vars.arrivals.arrivals.locationName]]></ee:set-variable>
+					<ee:set-variable variableName="destinationLocation"><![CDATA[vars.arrivals.arrivals.filterLocationName]]></ee:set-variable>
+				</ee:variables>
+			
+</ee:transform>
+			<choice doc:name="Check If There Are Any Delays Or Cancellations To Be Notified For The Current Subscription" doc:id="3d784a9b-de39-4d6b-9a9c-e62ed8951090">
+					<when expression='#[!isEmpty(payload)]'>
+					<foreach doc:name="For Each Delay Publish The Delay To The Queue" doc:id="d37b9465-5d57-4e4e-8a5a-320abbb58389">
+								<vm:publish doc:name="Publish" doc:id="07dd5b3b-591a-4605-8409-256ef28b5372" config-ref="alertNotificationPapiVmConfig" queueName="delayedTrain" />
+					</foreach>
+					</when>
+				</choice>
+		
+</foreach>
+			</when>
+		</choice>
+		<json-logger:logger doc:name="JSON Logger Rail Delay Notifications Exit" doc:id="af270c7b-f19e-4287-a181-72fe05c4978e" config-ref="jsonLoggerConfig" message="JSON Logger Rail Delay Notifications Exit"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2799b64a-1318-40cd-9cff-aa86e18d915d" when="#[error.errorType.namespace == 'NATIONAL-RAIL-SAPI']">
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="93b3ed2d-ccf2-450b-bef3-f60b453338e5" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while processing alerts for National Rail Customer">
+					<email:to-addresses>
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unable to process notifications due to error while invoking National Rail System API"
+ }]' doc:name="Payload To National Rail System API Unavailability" doc:id="81a2bad9-4a79-4306-90ed-8cb0981a0a2c" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="86d7b1cc-bb90-4f55-b13b-5e2461354a2f" when="#[error.errorType.namespace == 'USER-SUBSCRIPTION-SYSTEM-SAPI']">
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="f671d90c-032c-4cb8-bfaa-1a0a7649d9ae" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while processing alerts for National Rail Customer">
+					<email:to-addresses>
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unable to process notifications due to error while invoking User Subscription System API"
+ }]' doc:name="Set Payload To User Subscription System API Unavailability" doc:id="26712d38-5334-4c54-b6f2-ad3acbe360b1" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2183c932-3bc2-4e68-a492-ab96f702955f" type="ANY">
+				<email:send doc:name="Send Email To The Administrator Informing About The Failure" doc:id="c4bd976b-10ca-43aa-a22f-f47adababb08" config-ref="emailSmtp" fromAddress="nationalrailalert@gmail.com" subject="Failure while processing alerts for National Rail Customer">
+					<email:to-addresses>
+						<email:to-address value="nationalrailalert@gmail.com" />
+					</email:to-addresses>
+					<email:body contentType="text/html" />
+				</email:send>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "500",
+  message: "Unexpected Error Occured while transforming data received from Subscription/Rail System API"
+ }]' doc:name="Set Payload To Transformation Exception" doc:id="21d78dfc-026a-43fa-a740-690971fa50af" />
+			</on-error-propagate>
+		</error-handler>
+	
+</flow>	
+</mule>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:user-identity-mgmt-system-api="http://www.mulesoft.org/schema/mule/user-identity-mgmt-system-api"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:user-subscription-system-api="http://www.mulesoft.org/schema/mule/user-subscription-system-api" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/user-subscription-system-api http://www.mulesoft.org/schema/mule/user-subscription-system-api/current/mule-user-subscription-system-api.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/user-identity-mgmt-system-api http://www.mulesoft.org/schema/mule/user-identity-mgmt-system-api/current/mule-user-identity-mgmt-system-api.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	  <http:listener-config name="httpListenerConfig">
+    <http:listener-connection host="0.0.0.0" port="${http.port}" />
+  </http:listener-config>
+  <apikit:config name="userSubscriptionEapiConfig"
+    api="resource::3480247f-d37c-4331-9bae-dd5e280fb2be:user-subscription-eapi:1.0.0:raml:zip:user-subscription-eapi.raml" outboundHeadersMapName="outboundHeaders"
+    httpStatusVarName="httpStatus" />
+  <user-subscription-system-api:config name="userSubscriptionSapiConfig" doc:name="User Subscription System API Config" doc:id="5232286c-5fe2-441a-867f-4f7b5892cc1c" property_host="${user-subscription.host}" property_port="${user-subscription.port}" property_basePath="${user-subscription.basepath}" property_protocol="${user-subscription.protocol}" property_responseTimeout="${user-subscription.responseTimeout}">
+		<user-subscription-system-api:connection />
+	</user-subscription-system-api:config>
+  <user-identity-mgmt-system-api:config name="userIdentityMgmntSapiConfig" doc:name="User Identity Mgmt System API Config" doc:id="5fe63640-d58c-4f57-a98c-493fa95bb4d4" property_host="${identity-management.host}" property_port="${identity-management.port}" property_protocol="${identity-management.protocol}" property_basePath="${identity-management.basepath}" property_responseTimeout="${identity-management.responseTimeout}" />	
+	
+	<configuration-properties doc:name="Configuration properties" doc:id="444e5c82-d3c2-4eae-ade8-d78f8a8ce30a" file="config/user.subscription.exp.${env}.yaml" />
+	<json-logger:config name="jsonLoggerConfig" doc:name="JSON Logger Config" doc:id="2a7bb84a-b0cb-4640-af6b-8f5270f5459a" environment="${env}" applicationName="user-subscription-eapi" applicationVersion="v1"/>
+	<global-property doc:name="Global Property" doc:id="4693eee5-44d7-4eb0-8ab9-54d5e85b40d8" name="env" value="dev" />
+	
+</mule>

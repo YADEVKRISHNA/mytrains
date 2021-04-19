@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<flow name="get-subscription-by-subscription-id" doc:id="2ca40091-a79a-4ad2-9c4a-5f70c5bedd9e" >
+		<json-logger:logger doc:name="JSON Logger Subscription By Subscription Id Entry" doc:id="3a001333-fd1b-472e-9091-d8a2a9895a60" config-ref="jsonLoggerConfig" message="JSON Logger Subscription By Subscription Id Entry"/>
+		<db:select doc:name="Select Subscriptions by Subscription Id And User Id" doc:id="59105354-7644-47a8-aa74-c2b5bf20b39c" config-ref="databaseConfig">
+			<db:sql><![CDATA[select subscription_id,source_location,destination_location,from_time,to_time,user_id,advance_notify_time_min from SUBSCRIPTION where user_id = :user_id and subscription_id = :subscription_id ]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	user_id : attributes.uriParams.userId,
+	subscription_id : attributes.uriParams.subscriptionId
+}]]]></db:input-parameters>
+		</db:select>
+		<validation:validate-size doc:name="Validate Subsciptions Available Or Not" doc:id="95050989-b2a9-4dc4-8630-1a6481c134cc" config-ref="validationConfig" value="#[payload]" min="1" message="Subscription not available for the subscription id" />
+		<json-logger:logger doc:name="JSON Logger Before Subscription By Subscrption ID" doc:id="d33ef142-992c-4154-abef-fa40a842a8e4" config-ref="jsonLoggerConfig" message="JSON Logger Before Subscription By Subscrption ID" tracePoint="BEFORE_TRANSFORM" priority="TRACE"/>
+		<ee:transform doc:name="Subscription By Subscription Id To JSON" doc:id="64862be2-fcd8-4d71-8650-a6a0b683320b">
+			<ee:message>
+				<ee:set-payload resource="dwl\subscription-by-subscription-id-to-json.dwl" />
+			
+</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Subscription By Subscription Id Exit" doc:id="f5b63b1d-4034-44fe-9136-916e6c18e1e7" config-ref="jsonLoggerConfig" message="JSON Logger Subscription By Subscription Id Exit" tracePoint="END" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="44ade8b1-abc7-45e3-9e0d-714686bc88d7" when="#[error.description == 'Subscription not available for the subscription id']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "404",
+  message: "Subscription not available for the subscription id"
+ }]' doc:name="Set Payload To Indicate That No Subscription Exists For The Supplied Subscription Id" doc:id="717a75a9-209c-4654-9621-31208c1403bc" />
+				<set-variable value="404" doc:name='Set Http Status Code To "404 Not Found"' doc:id="9be0c2b9-53e0-4571-839c-045a86704ac2" variableName="httpStatus" />
+			
+</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="get-subscriptions-by-user-id" doc:id="dcf17648-fdc1-4889-a552-2a02cb733430" >
+		<json-logger:logger doc:name="JSON Logger Subscription By User Id Entry" doc:id="13dfd9c7-e535-48c4-aed5-f339d96e2ea2" config-ref="jsonLoggerConfig" message="JSON Logger Subscription By User Id Entry"/>
+		<choice doc:name="Choice" doc:id="9afe3df8-e8e2-48f2-aa24-24e419e5195b" >
+			<when expression="#[!isEmpty(attributes.queryParams.trainTime) and !isEmpty(attributes.queryParams.sourceLocationCode) and !isEmpty(attributes.queryParams.destinationLocationCode)]">
+				<db:select doc:name="Select Subscription By User Id And By Train Time And Sounce And Destination" doc:id="5573b74c-6eca-4ae8-88ea-304dd74eafd0" config-ref="databaseConfig" >
+					<db:sql ><![CDATA[select subscription_id,source_location,destination_location,from_time,to_time,user_id,advance_notify_time_min from SUBSCRIPTION where (user_id = :user_id and (:trainTime BETWEEN FROM_TIME AND TO_TIME) and SOURCE_LOCATION = :sourceLocationCode and DESTINATION_LOCATION = :destinationLocationCode)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	user_id : attributes.uriParams.userId,
+	trainTime : attributes.queryParams.trainTime,
+	sourceLocationCode : attributes.queryParams.sourceLocationCode,
+	destinationLocationCode : attributes.queryParams.destinationLocationCode
+	}]]]></db:input-parameters>
+				</db:select>
+				<validation:validate-size doc:name="Validate Subscription Available Or Not For The User" doc:id="ee62f975-4dd9-4e96-bcbe-a564763bd54d" config-ref="validationConfig" value="#[payload]" min="1" message="No subscriptions are available for the user" />
+				<ee:transform doc:name="Subscription By User Id To JSON" doc:id="863cedc4-203d-4043-96f4-f6729dc5db25" >
+					<ee:message >
+						<ee:set-payload resource="dwl\subscription-by-user-id-to-json.dwl" />
+					
+</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<db:select doc:name="Select Subscription By User Id And By Train Time And Sounce And Destination" doc:id="d9ca828a-819d-4ccc-be5c-792e0057887b" config-ref="databaseConfig">
+			<db:sql><![CDATA[select subscription_id,source_location,destination_location,from_time,to_time,user_id,advance_notify_time_min from SUBSCRIPTION where user_id = :user_id]]></db:sql>
+			<db:input-parameters><![CDATA[#[user_id : attributes.uriParams.userId]]]></db:input-parameters>
+		</db:select>
+				<validation:validate-size doc:name="Validate Subscription Available Or Not For The User" doc:id="ed51a57c-7404-470d-a4cc-5a9e182a7c25" config-ref="validationConfig" value="#[payload]" min="1" message="No subscriptions are available for the user" />
+				<ee:transform doc:name="Subscription By User Id To JSON" doc:id="95a49789-f87f-481f-94e0-1ea3da5cf2c9">
+			<ee:message>
+						<ee:set-payload resource="dwl\subscription-by-user-id-to-json1.dwl" />
+			
+</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+		<json-logger:logger doc:name="JSON Logger Subscription By User Id Exit" doc:id="024cbaf4-a8ae-43f7-96c4-a00660950098" config-ref="jsonLoggerConfig" message="JSON Logger Subscription By User Id Exit"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="ce492e14-a9cc-4912-8b21-c0105b3334c0" when="#[error.description == 'No subscriptions are available for the user']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "204",
+  message: "No subscriptions are available for the user"
+ }]' doc:name="Set Payload To Indicate No Subscriptions Are Found For The User" doc:id="d6a81a11-80ea-4605-9bd3-fa87528eea79" />
+				<set-variable value="204" doc:name='Set Http Status Code To "204 No Content Found"' doc:id="0d787b0e-e19c-4acf-9ad9-9e5fcd46fe44" variableName="httpStatus" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="add-subscription-by-user-id" doc:id="bc97ef99-371e-4f93-bca4-a6baa082515f" >
+		<json-logger:logger doc:name="JSON Logger Add Subscription By User Id Entry" doc:id="041a3884-097e-4013-9831-75c76eba1c11" config-ref="jsonLoggerConfig" message="JSON Logger Add Subscription By User Id Entry"/>
+		<choice doc:name="Choice" doc:id="925284d5-fed9-4f82-b9c9-0817d76a55dd">
+			<when expression="#[payload.sourceLocationCode == payload.destinationLocationCode]">
+				<raise-error doc:name="Raise Error If Source And Destination Are Same" doc:id="b882fa33-0e0c-4da9-afb5-878f2a66dd7b" type="DATA:VALIDATION" description="Source and destination location cannot be same" />
+			</when>
+			<otherwise>
+				<db:insert doc:name="Insert Subscription In To Database If Source And Destination Are Different" doc:id="e6a41bcb-393b-4af3-ae88-1f282d9492ff" config-ref="databaseConfig" target="subscription">
+			<db:sql><![CDATA[insert into SUBSCRIPTION(source_location,destination_location,from_time,to_time,user_id,status_type_id,advance_notify_time_min) values (:source_location,:destination_location,:from_time,:to_time,:user_id,1,:advance_notify_time_mins)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{source_location : payload.sourceLocationCode ,
+ destination_location : payload.destinationLocationCode,
+ from_time : payload.fromTime ,
+ to_time : payload.toTime ,
+ advance_notify_time_mins : payload.advanceNotificationMins,
+ user_id : attributes.uriParams.userId
+}]]]></db:input-parameters>
+		</db:insert>
+				<db:select doc:name="Select Max Of Subscription Id And User Id from Subscription by User Id" doc:id="1cbda61a-49d6-46b9-8232-05792f88d5c4" config-ref="databaseConfig">
+					<db:sql ><![CDATA[SELECT MAX(SUBSCRIPTION_ID) AS subscription_id,:userId as user_id  FROM SUBSCRIPTION where user_id = :userId]]></db:sql>
+					<db:input-parameters ><![CDATA[#[userId : attributes.uriParams.userId]]]></db:input-parameters>
+				</db:select>
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  rel: "self",
+  href: "../api/users/" ++ payload[0].user_id as String ++ "/subscriptions/" ++ payload[0].subscription_id as String
+ }]' doc:name="Set Payload To Send The Latest Subscription Id" doc:id="ab208bfa-fb07-49e7-b1a8-e5f1ddfaef86" />
+			</otherwise>
+		</choice>
+		<json-logger:logger doc:name="JSON Logger Add Subscription By User Id Exit" doc:id="b28bc1fc-3009-418a-b49a-123fb502075f" config-ref="jsonLoggerConfig" message="JSON Logger Add Subscription By User Id Exit"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="cea13411-65f1-4bbf-a658-cad4e9d68ce4" when="#[error.description == 'Source and destination location cannot be same']" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "400",
+  message: "Source and destination location cannot be same"
+ }]' doc:name="Set Payload To Inidate Source And Destination Location Cannot Be Same" doc:id="e61828da-27a6-46d0-9e3c-da281e7a5893" />
+				<set-variable value="400" doc:name='Set Http Status Code To "400 Bad Request"' doc:id="6cee5f25-8b23-4551-b325-800742654d96" variableName="httpStatus" />
+			</on-error-continue>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Error Continue" doc:id="f4e695a2-7db7-48a6-96fb-c6b4719bb8f9" when="#[error.description contains('Duplicate')]" >
+				<set-payload value='#[%dw 2.0
+output application/json
+---
+{
+  statusCode: "400",
+  message: "Subscription already exists for combination of data provided by user"
+ }]' doc:name="Set Payload To The Indicate The Same Subscription Cannot Be Added Again" doc:id="5f1f09f1-dbb9-426f-9cf6-c10f6b8c8c27" />
+				<set-variable value="400" doc:name='Set Http Status Code To "400 Bad Request"' doc:id="e6be7da1-c833-4c77-a87f-5a6527d7707d" variableName="httpStatus" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<sub-flow name="get-qualifying-locations" doc:id="fa304120-34a0-4479-af84-9f83baf27819" >
+		<json-logger:logger doc:name="JSON Logger Get Locations Entry" doc:id="f6ef9038-8d2b-4a5e-8c0e-ed17028524c4" config-ref="jsonLoggerConfig" message="JSON Logger Get Locations Entry"/>
+		<db:select doc:name="Select Distinct Source Location Destination Location Time Difference" doc:id="eb99c826-0977-44cf-b45e-e8cbc72dfe0b" config-ref="databaseConfig">
+			<db:sql ><![CDATA[SELECT  DISTINCT SOURCE_LOCATION,DESTINATION_LOCATION, TIMESTAMPDIFF(MINUTE,CURRENT_TIME,MAX(TO_TIME)) AS ADVANCE_NOTIFICATION_TIME_MIN FROM SUBSCRIPTION  WHERE  CURRENT_TIMESTAMP > ADDDATE(FROM_TIME,INTERVAL -:MAX_ADVANCE_NOTIFICATION MINUTE) AND CURRENT_TIMESTAMP > ADDDATE(FROM_TIME,INTERVAL -ADVANCE_NOTIFY_TIME_MIN-1 MINUTE) AND FROM_TIME > CURRENT_TIMESTAMP GROUP BY SOURCE_LOCATION,DESTINATION_LOCATION
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[MAX_ADVANCE_NOTIFICATION : attributes.queryParams.notificationRangeMins]]]></db:input-parameters>
+		
+</db:select>
+		<ee:transform doc:name="Qualifying Locations To JSON" doc:id="3ad3acd1-af13-4820-8fac-315f7fd9b361" >
+			<ee:message >
+				<ee:set-payload resource="dwl\qualifying-locations-to-json.dwl" />
+			
+</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="JSON Logger Get Locations Exit" doc:id="2fc2e34c-a084-4f24-b1b5-0b952e812eb6" config-ref="jsonLoggerConfig" message="JSON Logger Get Locations Exit"/>
+	</sub-flow>
+
+</mule>

@@ -1,0 +1,20 @@
+subscription:
+  host: user-subscription-sapi.us-e2.cloudhub.io
+  port: "80"
+  basepath: api
+  protocol: HTTP
+  responseTimeout: "10000"
+  advanceNotificationMins: "120"
+rail:
+  host: "national-rail-sapi.us-e2.cloudhub.io"
+  port: "80"
+  basepath: api
+  protocol: HTTP
+  responseTimeout: "10000"
+salesforce:
+  authURL: "https://login.salesforce.com/services/Soap/u/46.0"
+  securityToken: "Gxq9brmkLmP2SJpaqVnKsXGCu"
+  username: "nationalrailalert@gmail.com"
+  password: "S@les32!"
+http:
+  port: "8081"  
